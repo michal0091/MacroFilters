@@ -3,3 +3,4 @@
 ^LICENSE\.md$
 ^MacroFilters\.Rproj$
 ^\.Rproj\.user$
+^README\.Rmd$
