@@ -92,8 +92,9 @@ print.macrofilter <- function(x, ...) {
   cat(sprintf("   Observations : %d\n", n))
 
 
-  # Show relevant parameters per method
+  # Show relevant scalar parameters per method
   params <- setdiff(names(m), c("method", "compute_time"))
+  params <- Filter(function(p) length(m[[p]]) == 1L, params)
   if (length(params) > 0L) {
     vals <- vapply(params, function(p) format(m[[p]], digits = 4), character(1))
     cat(sprintf("   Parameters   : %s\n", paste(params, vals, sep = " = ", collapse = ", ")))
