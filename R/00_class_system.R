@@ -78,6 +78,7 @@ validate_macrofilter <- function(x, tol = 1e-9) {
 # ── Print method ─────────────────────────────────────────────────────────────
 
 #' @export
+#' @importFrom stats sd
 print.macrofilter <- function(x, ...) {
   m <- x$meta
   n <- length(x$data)
