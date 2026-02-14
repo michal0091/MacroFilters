@@ -125,6 +125,7 @@ ensure_computable <- function(x) {
 #' @param y Numeric vector (trend or cycle result from an algorithm).
 #' @param input_handler The list returned by [ensure_computable()].
 #' @return An object matching the original class of the input.
+#' @importFrom stats ts tsp
 #' @keywords internal
 #' @noRd
 restore_class <- function(y, input_handler) {
