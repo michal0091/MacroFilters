@@ -58,8 +58,13 @@ validate_macrofilter <- function(x, tol = 1e-9) {
   }
 
   residual <- abs(x$trend + x$cycle - x$data)
-  # Ignore positions where original data is NA
-  check_idx <- !is.na(x$data)
+  # Ignore positions where any component is NA (e.g. Hamilton filter pads with NAs)
+  check_idx <- !is.na(x$data) & !is.na(x$trend) & !is.na(x$cycle)
+
+  if (!any(check_idx)) {
+    stop("No complete cases to validate (all positions contain NA).", call. = FALSE)
+  }
+
   max_err <- max(residual[check_idx])
 
   if (max_err > tol) {
