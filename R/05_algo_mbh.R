@@ -15,8 +15,9 @@
 #'   If `NULL` (default), it is calculated as `max(20, floor(n / 2))`.
 #'   High knot density is required for the trend to be flexible enough.
 #' @param mstop Integer.
-#'   Number of boosting iterations (default 500).
-#'   Robust loss functions require more iterations to converge than L2 loss.
+#'   Maximum number of boosting iterations (default 500).
+#'   If `select_mstop = TRUE` this is the upper bound; the actual stopping
+#'   point is chosen by AICc.
 #' @param d Numeric or `NULL`.
 #'   The delta parameter for Huber loss. If `NULL` (default), it is
 #'   auto-calibrated as the Median Absolute Deviation (MAD) of the first
@@ -24,7 +25,17 @@
 #'   scale-invariant, working correctly for both log-differenced and level
 #'   series. Supply an explicit numeric value to override this behaviour.
 #' @param nu Numeric.
-#'   The learning rate (shrinkage) for boosting (default 0.2).
+#'   The learning rate (shrinkage) for boosting (default 0.1).
+#' @param df Integer.
+#'   Effective degrees of freedom per boosting step for the P-Spline base
+#'   learner (default 4). Lower values produce smoother per-step updates and
+#'   improve stability; this is the standard setting recommended in Bühlmann
+#'   & Hothorn (2007).
+#' @param select_mstop Logical.
+#'   If `TRUE`, the optimal number of boosting iterations is selected
+#'   automatically via AICc (corrected AIC), following Bühlmann & Hothorn
+#'   (2007). The `mstop` argument acts as the search upper bound. Default
+#'   `FALSE` for backward compatibility.
 #'
 #' @details
 #' The model estimated is an additive model:
@@ -45,11 +56,11 @@
 #'
 #' @return A `macrofilter` object with `trend`, `cycle`, `data`, and `meta`
 #'   components.  The `meta` list contains `method = "MBH"`, `knots`, `d`,
-#'   `mstop`, `nu`, and `compute_time`.
+#'   `mstop`, `nu`, `df`, `select_mstop`, and `compute_time`.
 #'
 #' @export
-#' @importFrom mboost mboost bbs bols Huber boost_control
-#' @importFrom stats fitted
+#' @importFrom mboost mboost bbs bols Huber boost_control mstop
+#' @importFrom stats fitted AIC
 #'
 #' @examples
 #' # Quarterly GDP-like series
@@ -57,7 +68,8 @@
 #' y <- ts(cumsum(rnorm(200)), start = c(2000, 1), frequency = 4)
 #' result <- mbh_filter(y)
 #' print(result)
-mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.2) {
+mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.1,
+                       df = 4L, select_mstop = FALSE) {
 
   # 1. Ingest ----------------------------------------------------------------
   inputs <- ensure_computable(x)
@@ -88,15 +100,17 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.2) {
   max_knots <- max(1L, n - 4L)
   knots <- min(as.integer(knots), max_knots)
   mstop <- as.integer(mstop)
+  df    <- as.integer(df)
 
   # 5. Timer -----------------------------------------------------------------
   t0 <- proc.time()
 
   # 6. Base learners ---------------------------------------------------------
-  time_idx <- seq_len(n)
-  df_boost <- data.frame(y = y, time_idx = time_idx)
+  time_idx  <- seq_len(n)
+  df_boost  <- data.frame(y = y, time_idx = time_idx)
   bl_linear <- mboost::bols(time_idx, intercept = TRUE)
-  bl_smooth <- mboost::bbs(time_idx, knots = knots, degree = 3, differences = 2)
+  bl_smooth <- mboost::bbs(time_idx, knots = knots, degree = 3,
+                            differences = 2, df = df)
 
   # 7. Fit -------------------------------------------------------------------
   fam  <- mboost::Huber(d = d)
@@ -108,6 +122,20 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.2) {
       data = df_boost, family = fam, control = ctrl
     )
   ))
+
+  # 7.5. Optional AICc-based mstop selection ---------------------------------
+  mstop_final <- mstop
+  if (select_mstop) {
+    aic_obj <- tryCatch(
+      stats::AIC(mod, method = "corrected"),
+      error = function(e) NULL
+    )
+    if (!is.null(aic_obj)) {
+      best_stop   <- mboost::mstop(aic_obj)
+      mod         <- mod[best_stop]
+      mstop_final <- as.integer(best_stop)
+    }
+  }
 
   # 8. Extract ---------------------------------------------------------------
   trend_num <- as.numeric(fitted(mod))
@@ -121,12 +149,15 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.2) {
     trend = trend_num,
     data  = y,
     meta  = list(
-      method       = "MBH",
-      knots        = knots,
-      d            = d,
-      mstop        = mstop,
-      nu           = nu,
-      compute_time = elapsed
+      method        = "MBH",
+      knots         = knots,
+      d             = d,
+      mstop         = mstop_final,
+      mstop_initial = mstop,
+      nu            = nu,
+      df            = df,
+      select_mstop  = select_mstop,
+      compute_time  = elapsed
     )
   )
 
