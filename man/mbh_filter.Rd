@@ -4,7 +4,7 @@
 \alias{mbh_filter}
 \title{MacroBoost Hybrid (MBH) Filter}
 \usage{
-mbh_filter(x, knots = NULL, mstop = 500L, d = 0.01, nu = 0.2)
+mbh_filter(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.2)
 }
 \arguments{
 \item{x}{Numeric vector, \code{ts}, \code{xts}, or \code{zoo} object.}
@@ -18,10 +18,12 @@ High knot density is required for the trend to be flexible enough.}
 Number of boosting iterations (default 500).
 Robust loss functions require more iterations to converge than L2 loss.}
 
-\item{d}{Numeric.
-The delta parameter for Huber loss (default 0.01).
-Values larger than the shock size (in log-diff) will treat the shock as
-normal.  Values smaller than the shock size will treat it as an outlier.}
+\item{d}{Numeric or \code{NULL}.
+The delta parameter for Huber loss. If \code{NULL} (default), it is
+auto-calibrated as the Median Absolute Deviation (MAD) of the first
+differences of the series. This makes the threshold robust and
+scale-invariant, working correctly for both log-differenced and level
+series. Supply an explicit numeric value to override this behaviour.}
 
 \item{nu}{Numeric.
 The learning rate (shrinkage) for boosting (default 0.2).}

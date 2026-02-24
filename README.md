@@ -72,13 +72,13 @@ hp_result   # print S3 summary
 #>    Observations : 80
 #>    Parameters   : lambda = 1600
 #>    Cycle range  : [-22.44, 5.885]  sd = 4.043
-#>    Compute time : 0.019 s
+#>    Compute time : 0.013 s
 mbh_result
 #> -- MacroFilter [MBH] --
 #>    Observations : 80
-#>    Parameters   : knots = 40, d = 0.01, mstop = 500, nu = 0.2
-#>    Cycle range  : [-15.86, 18.63]  sd = 10.83
-#>    Compute time : 0.058 s
+#>    Parameters   : knots = 40, d = 2.021, mstop = 500, nu = 0.2
+#>    Cycle range  : [-24.82, 4.681]  sd = 4.084
+#>    Compute time : 0.054 s
 ```
 
 ### Visualising the comparison
