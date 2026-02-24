@@ -95,6 +95,28 @@ test_that("Custom d parameter is stored correctly in meta", {
   expect_equal(result$meta$d, 0.5)
 })
 
+test_that("Auto-d computes correctly for normal series", {
+  set.seed(10)
+  y <- cumsum(rnorm(100))
+  result <- mbh_filter(y, mstop = 20L)
+  expect_true(is.numeric(result$meta$d))
+  expect_gt(result$meta$d, 0)
+})
+
+test_that("Custom d overrides Auto-d", {
+  set.seed(11)
+  y <- cumsum(rnorm(100))
+  result <- mbh_filter(y, d = 5.5, mstop = 20L)
+  expect_equal(result$meta$d, 5.5)
+})
+
+test_that("Auto-d falls back to 0.01 when MAD of diffs is zero", {
+  # Perfectly linear series: diff(y) is constant, so mad(diff(y)) == 0
+  y <- seq(1, 20) * 1.0
+  result <- mbh_filter(y, mstop = 10L)
+  expect_equal(result$meta$d, 0.01)
+})
+
 # ── 4. Output format ─────────────────────────────────────────────────────────
 
 test_that("MBH returns macrofilter with correct meta$method = 'MBH'", {
