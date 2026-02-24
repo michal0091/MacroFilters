@@ -4,3 +4,6 @@
 ^MacroFilters\.Rproj$
 ^\.Rproj\.user$
 ^README\.Rmd$
+^CLAUDE\.md$
+^\.ai$
+^\.claude$

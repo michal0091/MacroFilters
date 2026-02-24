@@ -18,13 +18,16 @@ RoxygenNote: 7.3.3
 URL: https://github.com/michal0091/MacroFilters
 BugReports: https://github.com/michal0091/MacroFilters/issues
 Imports:
-    data.table,
     Matrix,
     mboost,
-    strucchange,
     tseries
 Suggests:
+    data.table,
     ggplot2,
+    knitr,
+    rmarkdown,
+    strucchange,
     testthat (>= 3.0.0),
     xts,
     zoo
+VignetteBuilder: knitr
