@@ -187,7 +187,7 @@ bhp
 #>    Observations : 100
 #>    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic
 #>    Cycle range  : [-5.487, 4.068]  sd = 1.857
-#>    Compute time : 0.003 s
+#>    Compute time : 0.004 s
 ```
 
 Internally, **MacroFilters** precomputes the sparse penalty matrix
@@ -287,9 +287,9 @@ mbh_res <- mbh_filter(gdp)
 mbh_res
 #> -- MacroFilter [MBH] --
 #>    Observations : 80
-#>    Parameters   : knots = 40, d = 2.789, mstop = 500, nu = 0.2
-#>    Cycle range  : [-26.79, 4.144]  sd = 4.048
-#>    Compute time : 0.129 s
+#>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Cycle range  : [-26.64, 4.429]  sd = 4.087
+#>    Compute time : 0.128 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -314,9 +314,9 @@ list with three named elements:
 mbh_res
 #> -- MacroFilter [MBH] --
 #>    Observations : 80
-#>    Parameters   : knots = 40, d = 2.789, mstop = 500, nu = 0.2
-#>    Cycle range  : [-26.79, 4.144]  sd = 4.048
-#>    Compute time : 0.129 s
+#>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Cycle range  : [-26.64, 4.429]  sd = 4.087
+#>    Compute time : 0.128 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -327,10 +327,10 @@ parameters, the cycle range, and how long the filter took to run.
 ``` r
 # Trend and cycle as plain vectors
 head(mbh_res$trend, 8)
-#> [1] 102.9760 103.4037 103.8237 104.2267 104.5981 104.9223 105.1846 105.3732
+#> [1] 103.5415 103.7764 104.0074 104.2300 104.4373 104.6223 104.7785 104.9015
 head(mbh_res$cycle, 8)
-#> [1]  0.353030970 -2.715484756 -0.666295792  0.147056328  0.007018801
-#> [6] -0.696028779  2.381124338 -0.386268292
+#> [1] -0.21246933 -3.08814252 -0.85000087  0.14375249  0.16777488 -0.39598786
+#> [7]  2.78720646  0.08539543
 
 # Verify the fundamental identity: trend + cycle == data
 max(abs((mbh_res$trend + mbh_res$cycle) - mbh_res$data))  # should be < 1e-9
@@ -341,13 +341,16 @@ max(abs((mbh_res$trend + mbh_res$cycle) - mbh_res$data))  # should be < 1e-9
 
 ``` r
 str(mbh_res$meta)
-#> List of 6
-#>  $ method      : chr "MBH"
-#>  $ knots       : int 40
-#>  $ d           : num 2.79
-#>  $ mstop       : int 500
-#>  $ nu          : num 0.2
-#>  $ compute_time: num 0.129
+#> List of 9
+#>  $ method       : chr "MBH"
+#>  $ knots        : int 40
+#>  $ d            : num 2.79
+#>  $ mstop        : int 500
+#>  $ mstop_initial: int 500
+#>  $ nu           : num 0.1
+#>  $ df           : int 4
+#>  $ select_mstop : logi FALSE
+#>  $ compute_time : num 0.128
 ```
 
 The `meta` list stores every parameter used by the filter, making

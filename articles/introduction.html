@@ -308,7 +308,7 @@ test</td>
 <span><span class="co">#&gt;    Observations : 100</span></span>
 <span><span class="co">#&gt;    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-5.487, 4.068]  sd = 1.857</span></span>
-<span><span class="co">#&gt;    Compute time : 0.003 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.004 s</span></span></code></pre></div>
 <p>Internally, <strong>MacroFilters</strong> precomputes the sparse
 penalty matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Q</mi><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>I</mi><mo>+</mo><mi>λ</mi><mi>D</mi><mi>′</mi><mi>D</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">Q = (I + \lambda D'D)^{-1}</annotation></semantics></math>
@@ -450,9 +450,9 @@ needed for index-level series.</p>
 <span><span class="va">mbh_res</span></span>
 <span><span class="co">#&gt; -- MacroFilter [MBH] --</span></span>
 <span><span class="co">#&gt;    Observations : 80</span></span>
-<span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, nu = 0.2</span></span>
-<span><span class="co">#&gt;    Cycle range  : [-26.79, 4.144]  sd = 4.048</span></span>
-<span><span class="co">#&gt;    Compute time : 0.129 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
+<span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
+<span><span class="co">#&gt;    Compute time : 0.128 s</span></span></code></pre></div>
 <p><img src="introduction_files/figure-html/mbh-plot-1.png" class="r-plt" alt="" width="100%"></p>
 <hr>
 </div>
@@ -498,9 +498,9 @@ needed for index-level series.</p>
 <code class="sourceCode R"><span><span class="va">mbh_res</span></span>
 <span><span class="co">#&gt; -- MacroFilter [MBH] --</span></span>
 <span><span class="co">#&gt;    Observations : 80</span></span>
-<span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, nu = 0.2</span></span>
-<span><span class="co">#&gt;    Cycle range  : [-26.79, 4.144]  sd = 4.048</span></span>
-<span><span class="co">#&gt;    Compute time : 0.129 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
+<span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
+<span><span class="co">#&gt;    Compute time : 0.128 s</span></span></code></pre></div>
 <p>The <code>print</code> method shows the method, the number of
 observations, the key parameters, the cycle range, and how long the
 filter took to run.</p>
@@ -511,10 +511,10 @@ filter took to run.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Trend and cycle as plain vectors</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">mbh_res</span><span class="op">$</span><span class="va">trend</span>, <span class="fl">8</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 102.9760 103.4037 103.8237 104.2267 104.5981 104.9223 105.1846 105.3732</span></span>
+<span><span class="co">#&gt; [1] 103.5415 103.7764 104.0074 104.2300 104.4373 104.6223 104.7785 104.9015</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">mbh_res</span><span class="op">$</span><span class="va">cycle</span>, <span class="fl">8</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1]  0.353030970 -2.715484756 -0.666295792  0.147056328  0.007018801</span></span>
-<span><span class="co">#&gt; [6] -0.696028779  2.381124338 -0.386268292</span></span>
+<span><span class="co">#&gt; [1] -0.21246933 -3.08814252 -0.85000087  0.14375249  0.16777488 -0.39598786</span></span>
+<span><span class="co">#&gt; [7]  2.78720646  0.08539543</span></span>
 <span></span>
 <span><span class="co"># Verify the fundamental identity: trend + cycle == data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="op">(</span><span class="va">mbh_res</span><span class="op">$</span><span class="va">trend</span> <span class="op">+</span> <span class="va">mbh_res</span><span class="op">$</span><span class="va">cycle</span><span class="op">)</span> <span class="op">-</span> <span class="va">mbh_res</span><span class="op">$</span><span class="va">data</span><span class="op">)</span><span class="op">)</span>  <span class="co"># should be &lt; 1e-9</span></span>
@@ -525,13 +525,16 @@ filter took to run.</p>
 </h3>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">mbh_res</span><span class="op">$</span><span class="va">meta</span><span class="op">)</span></span>
-<span><span class="co">#&gt; List of 6</span></span>
-<span><span class="co">#&gt;  $ method      : chr "MBH"</span></span>
-<span><span class="co">#&gt;  $ knots       : int 40</span></span>
-<span><span class="co">#&gt;  $ d           : num 2.79</span></span>
-<span><span class="co">#&gt;  $ mstop       : int 500</span></span>
-<span><span class="co">#&gt;  $ nu          : num 0.2</span></span>
-<span><span class="co">#&gt;  $ compute_time: num 0.129</span></span></code></pre></div>
+<span><span class="co">#&gt; List of 9</span></span>
+<span><span class="co">#&gt;  $ method       : chr "MBH"</span></span>
+<span><span class="co">#&gt;  $ knots        : int 40</span></span>
+<span><span class="co">#&gt;  $ d            : num 2.79</span></span>
+<span><span class="co">#&gt;  $ mstop        : int 500</span></span>
+<span><span class="co">#&gt;  $ mstop_initial: int 500</span></span>
+<span><span class="co">#&gt;  $ nu           : num 0.1</span></span>
+<span><span class="co">#&gt;  $ df           : int 4</span></span>
+<span><span class="co">#&gt;  $ select_mstop : logi FALSE</span></span>
+<span><span class="co">#&gt;  $ compute_time : num 0.128</span></span></code></pre></div>
 <p>The <code>meta</code> list stores every parameter used by the filter,
 making results fully reproducible from the object alone — no need to
 track arguments separately.</p>

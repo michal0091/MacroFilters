@@ -79,7 +79,7 @@ result <- mbh_filter(y)
 print(result)
 #> -- MacroFilter [MBH] --
 #>    Observations : 200
-#>    Parameters   : knots = 100, d = 0.9445, mstop = 500, nu = 0.2
-#>    Cycle range  : [-4.111, 4.701]  sd = 1.597
-#>    Compute time : 0.191 s
+#>    Parameters   : knots = 100, d = 0.9445, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Cycle range  : [-4.17, 5.05]  sd = 1.721
+#>    Compute time : 0.202 s
 ```
