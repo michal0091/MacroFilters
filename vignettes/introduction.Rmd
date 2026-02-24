@@ -232,19 +232,32 @@ By default, `d` is auto-calibrated using the MAD of the series' first difference
 ### Quick example
 
 ```{r mbh-demo}
-set.seed(99)
-n   <- 80
-t   <- 1:n
-gdp <- ts(100 + 0.5 * t + 4 * sin(2 * pi * t / 20) + rnorm(n, sd = 1.5),
-          start = c(2001, 1), frequency = 4)
+set.seed(42)
+n <- 80
+t <- 1:n
 
-# Inject a sharp COVID-like contraction
-gdp[60] <- gdp[60] - 20
-gdp[61] <- gdp[61] - 13
-gdp[62] <- gdp[62] -  5
+# 1. Define simulation parameters
+sd_noise <- 1.8
+trend    <- 100 + 0.3 * t + 0.005 * t^2
+cycle    <- 2.5 * sin(2 * pi * t / 28) # 7-year business cycle
 
+# 2. Simulate GDP index
+gdp_num <- trend + cycle + rnorm(n, sd = sd_noise)
+
+# 3. Inject a structural shock (e.g., COVID-19 lockdown)
+# Expressed as extreme standard deviation events
+gdp_num[60] <- gdp_num[60] - (16 * sd_noise) # Massive crash
+gdp_num[61] <- gdp_num[61] - (9 * sd_noise)  # Partial recovery
+gdp_num[62] <- gdp_num[62] - (4 * sd_noise)  # V Stabilization
+gdp_num[62] <- gdp_num[62] - (2 * sd_noise)  # Stabilization
+
+gdp <- ts(gdp_num, start = c(2001, 1), frequency = 4)
+
+# Extract trends
 hp_res  <- hp_filter(gdp)
-mbh_res <- mbh_filter(gdp, d = 5)      # d tuned for GDP index levels
+
+# MBH Filter: Auto-calibrated threshold (d) based on MAD of differences
+mbh_res <- mbh_filter(gdp) 
 
 mbh_res
 ```

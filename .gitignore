@@ -7,3 +7,6 @@
 .RData
 renv/library
 .ai/
+docs
+/doc/
+/Meta/
