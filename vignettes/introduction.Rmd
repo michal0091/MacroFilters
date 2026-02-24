@@ -224,10 +224,10 @@ The default `knots = max(20, floor(n/2))` is deliberately generous — it gives 
 |---|---|---|
 | `knots` | `max(20, n/2)` | P-spline flexibility — higher = more local adaptability |
 | `mstop` | `500` | Boosting iterations — more = finer approximation |
-| `d` | `0.01` | Huber delta — observations with `\|residual\| > d` are downweighted |
+| `d` | `NULL (Auto)` | Huber delta — if `NULL`, auto-set via MAD of first differences (scale-invariant) |
 | `nu` | `0.2` | Shrinkage / learning rate — controls step size per iteration |
 
-The delta `d = 0.01` is calibrated to GDP growth rates (log-differenced). In levels, you may need a larger value: `d = 5` to `d = 20` is reasonable for a GDP index with a typical annual drift of a few units.
+By default, `d` is auto-calibrated using the MAD of the series' first differences, making the filter scale-invariant and suitable for both log-differenced and level series. You can override it with an explicit numeric value: `d = 0.01` is typical for growth rates, while `d = 5` to `d = 20` may be needed for index-level series.
 
 ### Quick example
 
