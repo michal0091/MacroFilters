@@ -47,6 +47,7 @@
 #'
 #' @export
 #' @importFrom mboost mboost bbs bols Huber boost_control
+#' @importFrom stats fitted
 #'
 #' @examples
 #' # Quarterly GDP-like series

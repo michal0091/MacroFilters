@@ -123,7 +123,7 @@ ensure_computable <- function(x) {
 #' Restore a numeric result to the original time-series class
 #'
 #' @param y Numeric vector (trend or cycle result from an algorithm).
-#' @param input_handler The list returned by [ensure_computable()].
+#' @param input_handler The list returned by `ensure_computable()`.
 #' @return An object matching the original class of the input.
 #' @importFrom stats ts tsp
 #' @keywords internal

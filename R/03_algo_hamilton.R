@@ -37,7 +37,7 @@
 #'   Filter. *Review of Economics and Statistics*, 100(5), 831--843.
 #'
 #' @export
-#' @importFrom stats lm.fit
+#' @importFrom stats embed lm.fit
 #'
 #' @examples
 #' # Quarterly GDP-like series
