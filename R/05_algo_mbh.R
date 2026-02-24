@@ -17,10 +17,12 @@
 #' @param mstop Integer.
 #'   Number of boosting iterations (default 500).
 #'   Robust loss functions require more iterations to converge than L2 loss.
-#' @param d Numeric.
-#'   The delta parameter for Huber loss (default 0.01).
-#'   Values larger than the shock size (in log-diff) will treat the shock as
-#'   normal.  Values smaller than the shock size will treat it as an outlier.
+#' @param d Numeric or `NULL`.
+#'   The delta parameter for Huber loss. If `NULL` (default), it is
+#'   auto-calibrated as the Median Absolute Deviation (MAD) of the first
+#'   differences of the series. This makes the threshold robust and
+#'   scale-invariant, working correctly for both log-differenced and level
+#'   series. Supply an explicit numeric value to override this behaviour.
 #' @param nu Numeric.
 #'   The learning rate (shrinkage) for boosting (default 0.2).
 #'
@@ -55,7 +57,7 @@
 #' y <- ts(cumsum(rnorm(200)), start = c(2000, 1), frequency = 4)
 #' result <- mbh_filter(y)
 #' print(result)
-mbh_filter <- function(x, knots = NULL, mstop = 500L, d = 0.01, nu = 0.2) {
+mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.2) {
 
   # 1. Ingest ----------------------------------------------------------------
   inputs <- ensure_computable(x)
@@ -67,7 +69,16 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = 0.01, nu = 0.2) {
     stop("Series must have at least 6 observations for MBH filter.", call. = FALSE)
   }
 
-  # 3. Knots heuristic (aggressive) ------------------------------------------
+  # 3. Auto-calibrate d (Huber delta) ----------------------------------------
+  # Computed from the MAD of first differences: a robust, scale-invariant
+  # measure of cycle-to-cycle volatility.
+  if (is.null(d)) {
+    d <- stats::mad(diff(y), na.rm = TRUE)
+    # Fallback for perfectly flat or deterministic series (MAD == 0)
+    if (d < 1e-6) d <- 0.01
+  }
+
+  # 4. Knots heuristic (aggressive) ------------------------------------------
   # High flexibility (~1 knot every 2 obs) because the Huber loss will be the
   # smoothness constraint, not the spline basis.
   if (is.null(knots)) {
@@ -78,16 +89,16 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = 0.01, nu = 0.2) {
   knots <- min(as.integer(knots), max_knots)
   mstop <- as.integer(mstop)
 
-  # 4. Timer -----------------------------------------------------------------
+  # 5. Timer -----------------------------------------------------------------
   t0 <- proc.time()
 
-  # 5. Base learners ---------------------------------------------------------
+  # 6. Base learners ---------------------------------------------------------
   time_idx <- seq_len(n)
   df_boost <- data.frame(y = y, time_idx = time_idx)
   bl_linear <- mboost::bols(time_idx, intercept = TRUE)
   bl_smooth <- mboost::bbs(time_idx, knots = knots, degree = 3, differences = 2)
 
-  # 6. Fit -------------------------------------------------------------------
+  # 7. Fit -------------------------------------------------------------------
   fam  <- mboost::Huber(d = d)
   ctrl <- mboost::boost_control(mstop = mstop, nu = nu)
 
@@ -98,13 +109,13 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = 0.01, nu = 0.2) {
     )
   ))
 
-  # 7. Extract ---------------------------------------------------------------
+  # 8. Extract ---------------------------------------------------------------
   trend_num <- as.numeric(fitted(mod))
   cycle_num <- y - trend_num
 
   elapsed <- (proc.time() - t0)[["elapsed"]]
 
-  # 8. Package into macrofilter ----------------------------------------------
+  # 9. Package into macrofilter ----------------------------------------------
   result <- new_macrofilter(
     cycle = cycle_num,
     trend = trend_num,
@@ -119,7 +130,7 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = 0.01, nu = 0.2) {
     )
   )
 
-  # 9. Validate --------------------------------------------------------------
+  # 10. Validate --------------------------------------------------------------
   validate_macrofilter(result)
 
   result
