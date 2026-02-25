@@ -50,7 +50,15 @@ them from distorting the trend.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">mbh_filter</span><span class="op">(</span><span class="va">x</span>, knots <span class="op">=</span> <span class="cn">NULL</span>, mstop <span class="op">=</span> <span class="fl">500L</span>, d <span class="op">=</span> <span class="cn">NULL</span>, nu <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">mbh_filter</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  knots <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  mstop <span class="op">=</span> <span class="fl">500L</span>,</span>
+<span>  d <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nu <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>  df <span class="op">=</span> <span class="fl">4L</span>,</span>
+<span>  select_mstop <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -70,29 +78,70 @@ High knot density is required for the trend to be flexible enough.</p></dd>
 
 <dt id="arg-mstop">mstop<a class="anchor" aria-label="anchor" href="#arg-mstop"></a></dt>
 <dd><p>Integer.
-Number of boosting iterations (default 500).
-Robust loss functions require more iterations to converge than L2 loss.</p></dd>
+Maximum number of boosting iterations (default 500).
+If <code>select_mstop = TRUE</code> this is the upper bound; the actual stopping
+point is chosen by AICc.</p></dd>
 
 
 <dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
 <dd><p>Numeric or <code>NULL</code>.
 The delta parameter for Huber loss. If <code>NULL</code> (default), it is
 auto-calibrated as the Median Absolute Deviation (MAD) of the first
-differences of the series. This makes the threshold robust and
-scale-invariant, working correctly for both log-differenced and level
-series. Supply an explicit numeric value to override this behaviour.</p></dd>
+differences of the series (<code>mad(diff(y))</code>).</p>
+<p><strong>Scale-mismatch warning:</strong> When <code>x</code> is a log-level series,
+<code>diff(y)</code> returns inter-period growth rates (typical scale 0.001–0.02),
+whereas the output gap (the residual the filter must explain) has a much
+larger scale (typical scale 0.01–0.05). Using <code>mad(diff(y))</code> as <code>d</code>
+therefore sets the Huber threshold far too low: the filter treats normal
+business-cycle oscillations as outliers, truncates their gradients, and
+blocks learning. The trend becomes over-smooth and the cycle absorbs
+too much long-run variance.</p>
+<p><strong>Recommendation:</strong> For a quick preliminary calibration use
+<code>d = mad(hp_filter(x)$cycle)</code>, which sets the threshold on the residual
+scale. Supply an explicit numeric value to override the automatic
+fallback entirely.</p></dd>
 
 
 <dt id="arg-nu">nu<a class="anchor" aria-label="anchor" href="#arg-nu"></a></dt>
 <dd><p>Numeric.
-The learning rate (shrinkage) for boosting (default 0.2).</p></dd>
+The learning rate (shrinkage) for boosting (default 0.1).</p></dd>
+
+
+<dt id="arg-df">df<a class="anchor" aria-label="anchor" href="#arg-df"></a></dt>
+<dd><p>Integer.
+Effective degrees of freedom per boosting step for the P-Spline base
+learner (default 4). This enforces the <em>weak-learner</em> constraint of
+Bühlmann &amp; Hothorn (2007): each boosting step contributes only a small,
+smooth update so that the trend is built up gradually over many
+iterations rather than fitted in one pass.</p>
+<p><strong>End-point instability warning:</strong> Higher <code>df</code> values cause the B-spline
+basis matrix to shift drastically when the sample size changes by even
+one observation (the "rubber-band effect"). The last few data points pull
+the estimated trend non-smoothly, producing unreliable end-of-sample
+estimates. Keep <code>df = 4</code> (the default) unless you have a specific reason
+to deviate.</p></dd>
+
+
+<dt id="arg-select-mstop">select_mstop<a class="anchor" aria-label="anchor" href="#arg-select-mstop"></a></dt>
+<dd><p>Logical.
+If <code>TRUE</code>, the optimal number of boosting iterations is selected
+automatically via AICc (corrected AIC), following Bühlmann &amp; Hothorn
+(2007). The <code>mstop</code> argument acts as the search upper bound. Default
+<code>FALSE</code>.</p>
+<p><strong>AICc underfitting warning:</strong> In the combination of Huber
+quasi-likelihood + P-splines, AICc penalises model complexity
+hyper-aggressively. In practice the algorithm stops at iteration ~5–15
+instead of the intended ~500. The resulting trend is nearly a straight
+line; all long-run variance is pushed into the cycle component, defeating
+the purpose of the filter. Treat <code>select_mstop = TRUE</code> as an
+experimental option and validate visually before relying on it.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>macrofilter</code> object with <code>trend</code>, <code>cycle</code>, <code>data</code>, and <code>meta</code>
 components.  The <code>meta</code> list contains <code>method = "MBH"</code>, <code>knots</code>, <code>d</code>,
-<code>mstop</code>, <code>nu</code>, and <code>compute_time</code>.</p>
+<code>mstop</code>, <code>nu</code>, <code>df</code>, <code>select_mstop</code>, and <code>compute_time</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -107,6 +156,33 @@ curvature.</p></li>
 mimic the flexibility of a standard HP filter while retaining the robustness
 of the Huber loss.</p>
     </div>
+    <div class="section level2">
+    <h2 id="calibration-guidance">Calibration Guidance<a class="anchor" aria-label="anchor" href="#calibration-guidance"></a></h2>
+
+
+<p>Three failure modes were discovered through empirical stress-testing.
+The defaults guard against all three:</p>
+<dl><dt>1. Huber delta scale mismatch (<code>d</code>)</dt>
+<dd><p>The automatic fallback <code>mad(diff(y))</code> operates on the scale of
+growth rates, not the output gap. For log-level input this sets <code>d</code>
+one to two orders of magnitude too small, causing ordinary
+business-cycle swings to be treated as outliers. If the estimated
+cycle looks implausibly large or the trend is nearly linear, override
+with <code>d = mad(hp_filter(x)$cycle)</code> as a starting point.</p></dd>
+
+<dt>2. AICc underfitting (<code>select_mstop</code>)</dt>
+<dd><p>AICc + Huber quasi-likelihood + P-splines stops boosting at
+iteration ~5–15. The trend degenerates to a near-straight line and
+the cycle absorbs all long-run variance. Leave <code>select_mstop = FALSE</code>
+(the default) and set <code>mstop</code> explicitly instead.</p></dd>
+
+<dt>3. End-point instability (<code>df</code>)</dt>
+<dd><p>Values above 4 shift the B-spline basis matrix non-smoothly as
+the sample grows, producing a "rubber-band" distortion in the final
+observations. Keep <code>df = 4</code> (the default) for real-time applications.</p></dd>
+
+
+</dl></div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -119,7 +195,7 @@ of the Huber loss.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Observations : 200</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Parameters   : knots = 100, d = 0.9445, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Cycle range  : [-4.17, 5.05]  sd = 1.721</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.202 s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.204 s</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
