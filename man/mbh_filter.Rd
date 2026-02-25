@@ -4,7 +4,15 @@
 \alias{mbh_filter}
 \title{MacroBoost Hybrid (MBH) Filter}
 \usage{
-mbh_filter(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.2)
+mbh_filter(
+  x,
+  knots = NULL,
+  mstop = 500L,
+  d = NULL,
+  nu = 0.1,
+  df = 4L,
+  select_mstop = FALSE
+)
 }
 \arguments{
 \item{x}{Numeric vector, \code{ts}, \code{xts}, or \code{zoo} object.}
@@ -15,23 +23,64 @@ If \code{NULL} (default), it is calculated as \code{max(20, floor(n / 2))}.
 High knot density is required for the trend to be flexible enough.}
 
 \item{mstop}{Integer.
-Number of boosting iterations (default 500).
-Robust loss functions require more iterations to converge than L2 loss.}
+Maximum number of boosting iterations (default 500).
+If \code{select_mstop = TRUE} this is the upper bound; the actual stopping
+point is chosen by AICc.}
 
 \item{d}{Numeric or \code{NULL}.
 The delta parameter for Huber loss. If \code{NULL} (default), it is
 auto-calibrated as the Median Absolute Deviation (MAD) of the first
-differences of the series. This makes the threshold robust and
-scale-invariant, working correctly for both log-differenced and level
-series. Supply an explicit numeric value to override this behaviour.}
+differences of the series (\code{mad(diff(y))}).
+
+\strong{Scale-mismatch warning:} When \code{x} is a log-level series,
+\code{diff(y)} returns inter-period growth rates (typical scale 0.001–0.02),
+whereas the output gap (the residual the filter must explain) has a much
+larger scale (typical scale 0.01–0.05). Using \code{mad(diff(y))} as \code{d}
+therefore sets the Huber threshold far too low: the filter treats normal
+business-cycle oscillations as outliers, truncates their gradients, and
+blocks learning. The trend becomes over-smooth and the cycle absorbs
+too much long-run variance.
+
+\strong{Recommendation:} For a quick preliminary calibration use
+\code{d = mad(hp_filter(x)$cycle)}, which sets the threshold on the residual
+scale. Supply an explicit numeric value to override the automatic
+fallback entirely.}
 
 \item{nu}{Numeric.
-The learning rate (shrinkage) for boosting (default 0.2).}
+The learning rate (shrinkage) for boosting (default 0.1).}
+
+\item{df}{Integer.
+Effective degrees of freedom per boosting step for the P-Spline base
+learner (default 4). This enforces the \emph{weak-learner} constraint of
+Bühlmann & Hothorn (2007): each boosting step contributes only a small,
+smooth update so that the trend is built up gradually over many
+iterations rather than fitted in one pass.
+
+\strong{End-point instability warning:} Higher \code{df} values cause the B-spline
+basis matrix to shift drastically when the sample size changes by even
+one observation (the "rubber-band effect"). The last few data points pull
+the estimated trend non-smoothly, producing unreliable end-of-sample
+estimates. Keep \code{df = 4} (the default) unless you have a specific reason
+to deviate.}
+
+\item{select_mstop}{Logical.
+If \code{TRUE}, the optimal number of boosting iterations is selected
+automatically via AICc (corrected AIC), following Bühlmann & Hothorn
+(2007). The \code{mstop} argument acts as the search upper bound. Default
+\code{FALSE}.
+
+\strong{AICc underfitting warning:} In the combination of Huber
+quasi-likelihood + P-splines, AICc penalises model complexity
+hyper-aggressively. In practice the algorithm stops at iteration ~5–15
+instead of the intended ~500. The resulting trend is nearly a straight
+line; all long-run variance is pushed into the cycle component, defeating
+the purpose of the filter. Treat \code{select_mstop = TRUE} as an
+experimental option and validate visually before relying on it.}
 }
 \value{
 A \code{macrofilter} object with \code{trend}, \code{cycle}, \code{data}, and \code{meta}
 components.  The \code{meta} list contains \code{method = "MBH"}, \code{knots}, \code{d},
-\code{mstop}, \code{nu}, and \code{compute_time}.
+\code{mstop}, \code{nu}, \code{df}, \code{select_mstop}, and \code{compute_time}.
 }
 \description{
 Decomposes a time series into trend and cycle using a robust boosting
@@ -56,6 +105,34 @@ The default parameters (\code{knots = n/2}, \code{mstop = 500}) are calibrated t
 mimic the flexibility of a standard HP filter while retaining the robustness
 of the Huber loss.
 }
+\section{Calibration Guidance}{
+
+Three failure modes were discovered through empirical stress-testing.
+The defaults guard against all three:
+
+\describe{
+\item{1. Huber delta scale mismatch (\code{d})}{
+The automatic fallback \code{mad(diff(y))} operates on the scale of
+growth rates, not the output gap. For log-level input this sets \code{d}
+one to two orders of magnitude too small, causing ordinary
+business-cycle swings to be treated as outliers. If the estimated
+cycle looks implausibly large or the trend is nearly linear, override
+with \code{d = mad(hp_filter(x)$cycle)} as a starting point.
+}
+\item{2. AICc underfitting (\code{select_mstop})}{
+AICc + Huber quasi-likelihood + P-splines stops boosting at
+iteration ~5--15. The trend degenerates to a near-straight line and
+the cycle absorbs all long-run variance. Leave \code{select_mstop = FALSE}
+(the default) and set \code{mstop} explicitly instead.
+}
+\item{3. End-point instability (\code{df})}{
+Values above 4 shift the B-spline basis matrix non-smoothly as
+the sample grows, producing a "rubber-band" distortion in the final
+observations. Keep \code{df = 4} (the default) for real-time applications.
+}
+}
+}
+
 \examples{
 # Quarterly GDP-like series
 set.seed(42)
