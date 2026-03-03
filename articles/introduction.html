@@ -205,7 +205,7 @@ and memory.</p>
 <span><span class="co">#&gt;    Observations : 100</span></span>
 <span><span class="co">#&gt;    Parameters   : lambda = 1600</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-7.738, 9.143]  sd = 3.897</span></span>
-<span><span class="co">#&gt;    Compute time : 0.003 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.002 s</span></span></code></pre></div>
 <p>The smoothing parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>
 is auto-selected from the series frequency via the Ravn-Uhlig (2002)
@@ -452,7 +452,7 @@ needed for index-level series.</p>
 <span><span class="co">#&gt;    Observations : 80</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
-<span><span class="co">#&gt;    Compute time : 0.135 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.137 s</span></span></code></pre></div>
 <p><img src="introduction_files/figure-html/mbh-plot-1.png" class="r-plt" alt="" width="100%"></p>
 <hr>
 </div>
@@ -500,7 +500,7 @@ needed for index-level series.</p>
 <span><span class="co">#&gt;    Observations : 80</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
-<span><span class="co">#&gt;    Compute time : 0.135 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.137 s</span></span></code></pre></div>
 <p>The <code>print</code> method shows the method, the number of
 observations, the key parameters, the cycle range, and how long the
 filter took to run.</p>
@@ -525,16 +525,17 @@ filter took to run.</p>
 </h3>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">mbh_res</span><span class="op">$</span><span class="va">meta</span><span class="op">)</span></span>
-<span><span class="co">#&gt; List of 9</span></span>
-<span><span class="co">#&gt;  $ method       : chr "MBH"</span></span>
-<span><span class="co">#&gt;  $ knots        : int 40</span></span>
-<span><span class="co">#&gt;  $ d            : num 2.79</span></span>
-<span><span class="co">#&gt;  $ mstop        : int 500</span></span>
-<span><span class="co">#&gt;  $ mstop_initial: int 500</span></span>
-<span><span class="co">#&gt;  $ nu           : num 0.1</span></span>
-<span><span class="co">#&gt;  $ df           : int 4</span></span>
-<span><span class="co">#&gt;  $ select_mstop : logi FALSE</span></span>
-<span><span class="co">#&gt;  $ compute_time : num 0.135</span></span></code></pre></div>
+<span><span class="co">#&gt; List of 10</span></span>
+<span><span class="co">#&gt;  $ method        : chr "MBH"</span></span>
+<span><span class="co">#&gt;  $ knots         : int 40</span></span>
+<span><span class="co">#&gt;  $ d             : num 2.79</span></span>
+<span><span class="co">#&gt;  $ mstop         : int 500</span></span>
+<span><span class="co">#&gt;  $ mstop_initial : int 500</span></span>
+<span><span class="co">#&gt;  $ nu            : num 0.1</span></span>
+<span><span class="co">#&gt;  $ df            : int 4</span></span>
+<span><span class="co">#&gt;  $ select_mstop  : logi FALSE</span></span>
+<span><span class="co">#&gt;  $ boundary.knots: NULL</span></span>
+<span><span class="co">#&gt;  $ compute_time  : num 0.137</span></span></code></pre></div>
 <p>The <code>meta</code> list stores every parameter used by the filter,
 making results fully reproducible from the object alone — no need to
 track arguments separately.</p>

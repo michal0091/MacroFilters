@@ -112,7 +112,7 @@ hp
 #>    Observations : 100
 #>    Parameters   : lambda = 1600
 #>    Cycle range  : [-7.738, 9.143]  sd = 3.897
-#>    Compute time : 0.003 s
+#>    Compute time : 0.002 s
 ```
 
 The smoothing parameter $\lambda$ is auto-selected from the series
@@ -289,7 +289,7 @@ mbh_res
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.135 s
+#>    Compute time : 0.137 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -316,7 +316,7 @@ mbh_res
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.135 s
+#>    Compute time : 0.137 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -341,16 +341,17 @@ max(abs((mbh_res$trend + mbh_res$cycle) - mbh_res$data))  # should be < 1e-9
 
 ``` r
 str(mbh_res$meta)
-#> List of 9
-#>  $ method       : chr "MBH"
-#>  $ knots        : int 40
-#>  $ d            : num 2.79
-#>  $ mstop        : int 500
-#>  $ mstop_initial: int 500
-#>  $ nu           : num 0.1
-#>  $ df           : int 4
-#>  $ select_mstop : logi FALSE
-#>  $ compute_time : num 0.135
+#> List of 10
+#>  $ method        : chr "MBH"
+#>  $ knots         : int 40
+#>  $ d             : num 2.79
+#>  $ mstop         : int 500
+#>  $ mstop_initial : int 500
+#>  $ nu            : num 0.1
+#>  $ df            : int 4
+#>  $ select_mstop  : logi FALSE
+#>  $ boundary.knots: NULL
+#>  $ compute_time  : num 0.137
 ```
 
 The `meta` list stores every parameter used by the filter, making
