@@ -308,7 +308,7 @@ test</td>
 <span><span class="co">#&gt;    Observations : 100</span></span>
 <span><span class="co">#&gt;    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-5.487, 4.068]  sd = 1.857</span></span>
-<span><span class="co">#&gt;    Compute time : 0.004 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.003 s</span></span></code></pre></div>
 <p>Internally, <strong>MacroFilters</strong> precomputes the sparse
 penalty matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Q</mi><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>I</mi><mo>+</mo><mi>λ</mi><mi>D</mi><mi>′</mi><mi>D</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">Q = (I + \lambda D'D)^{-1}</annotation></semantics></math>
@@ -362,7 +362,7 @@ reducing their influence on the trend estimate.</p>
 <strong><code>bols(time, intercept = TRUE)</code></strong> —
 captures the global linear drift.</li>
 <li>
-<strong><code>bbs(time, knots, degree = 3, differences = 2)</code></strong>
+<strong><code>bbs(time, knots, degree = 3, differences = 2, boundary.knots)</code></strong>
 — a cubic P-spline with <code>knots</code> interior knots that captures
 smooth nonlinear curvature.</li>
 </ul>
@@ -407,6 +407,13 @@ differences (scale-invariant)</td>
 <td><code>0.2</code></td>
 <td>Shrinkage / learning rate — controls step size per iteration</td>
 </tr>
+<tr class="odd">
+<td><code>boundary.knots</code></td>
+<td><code>NULL</code></td>
+<td>B-spline domain anchor — if <code>NULL</code>, uses
+<code>range(time_idx)</code>; fix to <code>c(1, T_max)</code> for
+real-time vintage stability</td>
+</tr>
 </tbody>
 </table>
 <p>By default, <code>d</code> is auto-calibrated using the MAD of the
@@ -415,6 +422,11 @@ suitable for both log-differenced and level series. You can override it
 with an explicit numeric value: <code>d = 0.01</code> is typical for
 growth rates, while <code>d = 5</code> to <code>d = 20</code> may be
 needed for index-level series.</p>
+<p>For real-time applications where the sample grows one period at a
+time, set <code>boundary.knots = c(1, T_max)</code> to anchor the
+B-spline domain to the full-sample range — this prevents the basis from
+shifting between vintages and makes trends comparable across publication
+dates.</p>
 </div>
 <div class="section level3">
 <h3 id="quick-example">Quick example<a class="anchor" aria-label="anchor" href="#quick-example"></a>
@@ -452,7 +464,7 @@ needed for index-level series.</p>
 <span><span class="co">#&gt;    Observations : 80</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
-<span><span class="co">#&gt;    Compute time : 0.137 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.133 s</span></span></code></pre></div>
 <p><img src="introduction_files/figure-html/mbh-plot-1.png" class="r-plt" alt="" width="100%"></p>
 <hr>
 </div>
@@ -500,7 +512,7 @@ needed for index-level series.</p>
 <span><span class="co">#&gt;    Observations : 80</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
-<span><span class="co">#&gt;    Compute time : 0.137 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.133 s</span></span></code></pre></div>
 <p>The <code>print</code> method shows the method, the number of
 observations, the key parameters, the cycle range, and how long the
 filter took to run.</p>
@@ -535,7 +547,7 @@ filter took to run.</p>
 <span><span class="co">#&gt;  $ df            : int 4</span></span>
 <span><span class="co">#&gt;  $ select_mstop  : logi FALSE</span></span>
 <span><span class="co">#&gt;  $ boundary.knots: NULL</span></span>
-<span><span class="co">#&gt;  $ compute_time  : num 0.137</span></span></code></pre></div>
+<span><span class="co">#&gt;  $ compute_time  : num 0.133</span></span></code></pre></div>
 <p>The <code>meta</code> list stores every parameter used by the filter,
 making results fully reproducible from the object alone — no need to
 track arguments separately.</p>

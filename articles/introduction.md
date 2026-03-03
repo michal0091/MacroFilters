@@ -187,7 +187,7 @@ bhp
 #>    Observations : 100
 #>    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic
 #>    Cycle range  : [-5.487, 4.068]  sd = 1.857
-#>    Compute time : 0.004 s
+#>    Compute time : 0.003 s
 ```
 
 Internally, **MacroFilters** precomputes the sparse penalty matrix
@@ -231,8 +231,9 @@ The trend is decomposed into two additive base learners fitted via
 $${\widehat{\tau}}_{t} = \underset{\text{Global linear drift}}{\underbrace{b_{0} + b_{1} \cdot t}} + \underset{\text{Local curvature (P-spline)}}{\underbrace{f(t)}}$$
 
 - **`bols(time, intercept = TRUE)`** — captures the global linear drift.
-- **`bbs(time, knots, degree = 3, differences = 2)`** — a cubic P-spline
-  with `knots` interior knots that captures smooth nonlinear curvature.
+- **`bbs(time, knots, degree = 3, differences = 2, boundary.knots)`** —
+  a cubic P-spline with `knots` interior knots that captures smooth
+  nonlinear curvature.
 
 The default `knots = max(20, floor(n/2))` is deliberately generous — it
 gives the spline enough flexibility to follow genuine low-frequency
@@ -241,18 +242,24 @@ shock-contaminated quarters are downweighted.
 
 ### Parameters
 
-| Parameter | Default        | Role                                                                             |
-|-----------|----------------|----------------------------------------------------------------------------------|
-| `knots`   | `max(20, n/2)` | P-spline flexibility — higher = more local adaptability                          |
-| `mstop`   | `500`          | Boosting iterations — more = finer approximation                                 |
-| `d`       | `NULL (Auto)`  | Huber delta — if `NULL`, auto-set via MAD of first differences (scale-invariant) |
-| `nu`      | `0.2`          | Shrinkage / learning rate — controls step size per iteration                     |
+| Parameter        | Default        | Role                                                                                                             |
+|------------------|----------------|------------------------------------------------------------------------------------------------------------------|
+| `knots`          | `max(20, n/2)` | P-spline flexibility — higher = more local adaptability                                                          |
+| `mstop`          | `500`          | Boosting iterations — more = finer approximation                                                                 |
+| `d`              | `NULL (Auto)`  | Huber delta — if `NULL`, auto-set via MAD of first differences (scale-invariant)                                 |
+| `nu`             | `0.2`          | Shrinkage / learning rate — controls step size per iteration                                                     |
+| `boundary.knots` | `NULL`         | B-spline domain anchor — if `NULL`, uses `range(time_idx)`; fix to `c(1, T_max)` for real-time vintage stability |
 
 By default, `d` is auto-calibrated using the MAD of the series’ first
 differences, making the filter scale-invariant and suitable for both
 log-differenced and level series. You can override it with an explicit
 numeric value: `d = 0.01` is typical for growth rates, while `d = 5` to
 `d = 20` may be needed for index-level series.
+
+For real-time applications where the sample grows one period at a time,
+set `boundary.knots = c(1, T_max)` to anchor the B-spline domain to the
+full-sample range — this prevents the basis from shifting between
+vintages and makes trends comparable across publication dates.
 
 ### Quick example
 
@@ -289,7 +296,7 @@ mbh_res
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.137 s
+#>    Compute time : 0.133 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -316,7 +323,7 @@ mbh_res
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.137 s
+#>    Compute time : 0.133 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -351,7 +358,7 @@ str(mbh_res$meta)
 #>  $ df            : int 4
 #>  $ select_mstop  : logi FALSE
 #>  $ boundary.knots: NULL
-#>  $ compute_time  : num 0.137
+#>  $ compute_time  : num 0.133
 ```
 
 The `meta` list stores every parameter used by the filter, making

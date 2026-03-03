@@ -15,7 +15,8 @@ mbh_filter(
   d = NULL,
   nu = 0.1,
   df = 4L,
-  select_mstop = FALSE
+  select_mstop = FALSE,
+  boundary.knots = NULL
 )
 ```
 
@@ -91,6 +92,13 @@ mbh_filter(
   defeating the purpose of the filter. Treat `select_mstop = TRUE` as an
   experimental option and validate visually before relying on it.
 
+- boundary.knots:
+
+  A numeric vector of length 2 specifying the global domain for the
+  B-spline basis (e.g., `c(1, T_max)`). If `NULL` (default), the range
+  of `time_idx` is used. For real-time stability, fix this to the
+  full-sample domain so the basis does not shift as the sample grows.
+
 ## Value
 
 A `macrofilter` object with `trend`, `cycle`, `data`, and `meta`
@@ -158,5 +166,5 @@ print(result)
 #>    Observations : 200
 #>    Parameters   : knots = 100, d = 0.9445, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-4.17, 5.05]  sd = 1.721
-#>    Compute time : 0.171 s
+#>    Compute time : 0.181 s
 ```
