@@ -64,6 +64,10 @@
 #'   line; all long-run variance is pushed into the cycle component, defeating
 #'   the purpose of the filter. Treat `select_mstop = TRUE` as an
 #'   experimental option and validate visually before relying on it.
+#' @param boundary.knots A numeric vector of length 2 specifying the global
+#'   domain for the B-spline basis (e.g., `c(1, T_max)`). If `NULL` (default),
+#'   the range of `time_idx` is used. For real-time stability, fix this to the
+#'   full-sample domain so the basis does not shift as the sample grows.
 #'
 #' @details
 #' The model estimated is an additive model:
@@ -123,7 +127,7 @@
 #' result <- mbh_filter(y)
 #' print(result)
 mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.1,
-                       df = 4L, select_mstop = FALSE) {
+                       df = 4L, select_mstop = FALSE, boundary.knots = NULL) {
 
   # 1. Ingest ----------------------------------------------------------------
   inputs <- ensure_computable(x)
@@ -164,7 +168,8 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.1,
   df_boost  <- data.frame(y = y, time_idx = time_idx)
   bl_linear <- mboost::bols(time_idx, intercept = TRUE)
   bl_smooth <- mboost::bbs(time_idx, knots = knots, degree = 3,
-                            differences = 2, df = df)
+                            differences = 2, df = df,
+                            boundary.knots = boundary.knots)
 
   # 7. Fit -------------------------------------------------------------------
   fam  <- mboost::Huber(d = d)
@@ -210,8 +215,9 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.1,
       mstop_initial = mstop,
       nu            = nu,
       df            = df,
-      select_mstop  = select_mstop,
-      compute_time  = elapsed
+      select_mstop   = select_mstop,
+      boundary.knots = boundary.knots,
+      compute_time   = elapsed
     )
   )
 
