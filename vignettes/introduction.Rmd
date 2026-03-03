@@ -214,7 +214,7 @@ $$
 $$
 
 - **`bols(time, intercept = TRUE)`** — captures the global linear drift.
-- **`bbs(time, knots, degree = 3, differences = 2)`** — a cubic P-spline with `knots` interior knots that captures smooth nonlinear curvature.
+- **`bbs(time, knots, degree = 3, differences = 2, boundary.knots)`** — a cubic P-spline with `knots` interior knots that captures smooth nonlinear curvature.
 
 The default `knots = max(20, floor(n/2))` is deliberately generous — it gives the spline enough flexibility to follow genuine low-frequency movements without overfitting, while the Huber loss ensures that shock-contaminated quarters are downweighted.
 
@@ -226,8 +226,14 @@ The default `knots = max(20, floor(n/2))` is deliberately generous — it gives 
 | `mstop` | `500` | Boosting iterations — more = finer approximation |
 | `d` | `NULL (Auto)` | Huber delta — if `NULL`, auto-set via MAD of first differences (scale-invariant) |
 | `nu` | `0.2` | Shrinkage / learning rate — controls step size per iteration |
+| `boundary.knots` | `NULL` | B-spline domain anchor — if `NULL`, uses `range(time_idx)`; fix to `c(1, T_max)` for real-time vintage stability |
 
 By default, `d` is auto-calibrated using the MAD of the series' first differences, making the filter scale-invariant and suitable for both log-differenced and level series. You can override it with an explicit numeric value: `d = 0.01` is typical for growth rates, while `d = 5` to `d = 20` may be needed for index-level series.
+
+For real-time applications where the sample grows one period at a time,
+set `boundary.knots = c(1, T_max)` to anchor the B-spline domain to the
+full-sample range — this prevents the basis from shifting between vintages
+and makes trends comparable across publication dates.
 
 ### Quick example
 

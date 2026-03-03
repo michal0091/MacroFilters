@@ -11,7 +11,8 @@ mbh_filter(
   d = NULL,
   nu = 0.1,
   df = 4L,
-  select_mstop = FALSE
+  select_mstop = FALSE,
+  boundary.knots = NULL
 )
 }
 \arguments{
@@ -76,6 +77,11 @@ instead of the intended ~500. The resulting trend is nearly a straight
 line; all long-run variance is pushed into the cycle component, defeating
 the purpose of the filter. Treat \code{select_mstop = TRUE} as an
 experimental option and validate visually before relying on it.}
+
+\item{boundary.knots}{A numeric vector of length 2 specifying the global
+domain for the B-spline basis (e.g., \code{c(1, T_max)}). If \code{NULL} (default),
+the range of \code{time_idx} is used. For real-time stability, fix this to the
+full-sample domain so the basis does not shift as the sample grows.}
 }
 \value{
 A \code{macrofilter} object with \code{trend}, \code{cycle}, \code{data}, and \code{meta}
