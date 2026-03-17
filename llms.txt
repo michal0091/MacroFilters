@@ -95,6 +95,8 @@ interface.
   : Hodrick-Prescott Filter (Sparse Matrix Implementation)
 - [`mbh_filter()`](https://michal0091.github.io/MacroFilters/reference/mbh_filter.md)
   : MacroBoost Hybrid (MBH) Filter
+- [`us_gdp_vintage`](https://michal0091.github.io/MacroFilters/reference/us_gdp_vintage.md)
+  : US Real GDP — FRED Vintage
 
 # Articles
 
@@ -102,3 +104,7 @@ interface.
 
 - [Introduction to
   MacroFilters](https://michal0091.github.io/MacroFilters/articles/introduction.md):
+- [Solving the End-Point Problem in
+  Real-Time](https://michal0091.github.io/MacroFilters/articles/real_time_revisions.md):
+- [Hyperparameter Tuning for the MacroBoost Hybrid
+  Filter](https://michal0091.github.io/MacroFilters/articles/tuning_mbh.md):

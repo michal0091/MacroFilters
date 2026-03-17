@@ -10,3 +10,5 @@
   : Hodrick-Prescott Filter (Sparse Matrix Implementation)
 - [`mbh_filter()`](https://michal0091.github.io/MacroFilters/reference/mbh_filter.md)
   : MacroBoost Hybrid (MBH) Filter
+- [`us_gdp_vintage`](https://michal0091.github.io/MacroFilters/reference/us_gdp_vintage.md)
+  : US Real GDP — FRED Vintage

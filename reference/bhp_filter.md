@@ -94,5 +94,5 @@ print(result)
 #>    Observations : 200
 #>    Parameters   : lambda = 1600, iterations = 100, stopping_rule = bic
 #>    Cycle range  : [-1.713, 1.66]  sd = 0.6829
-#>    Compute time : 0.011 s
+#>    Compute time : 0.009 s
 ```

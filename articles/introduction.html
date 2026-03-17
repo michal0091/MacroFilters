@@ -39,6 +39,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/introduction.html">Introduction to MacroFilters</a></li>
+    <li><a class="dropdown-item" href="../articles/real_time_revisions.html">Solving the End-Point Problem in Real-Time</a></li>
+    <li><a class="dropdown-item" href="../articles/tuning_mbh.html">Hyperparameter Tuning for the MacroBoost Hybrid Filter</a></li>
   </ul>
 </li>
       </ul>
@@ -308,7 +310,7 @@ test</td>
 <span><span class="co">#&gt;    Observations : 100</span></span>
 <span><span class="co">#&gt;    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-5.487, 4.068]  sd = 1.857</span></span>
-<span><span class="co">#&gt;    Compute time : 0.004 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.003 s</span></span></code></pre></div>
 <p>Internally, <strong>MacroFilters</strong> precomputes the sparse
 penalty matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Q</mi><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>I</mi><mo>+</mo><mi>λ</mi><mi>D</mi><mi>′</mi><mi>D</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">Q = (I + \lambda D'D)^{-1}</annotation></semantics></math>
@@ -464,7 +466,7 @@ dates.</p>
 <span><span class="co">#&gt;    Observations : 80</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
-<span><span class="co">#&gt;    Compute time : 0.139 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.123 s</span></span></code></pre></div>
 <p><img src="introduction_files/figure-html/mbh-plot-1.png" class="r-plt" alt="" width="100%"></p>
 <hr>
 </div>
@@ -512,7 +514,7 @@ dates.</p>
 <span><span class="co">#&gt;    Observations : 80</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
-<span><span class="co">#&gt;    Compute time : 0.139 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.123 s</span></span></code></pre></div>
 <p>The <code>print</code> method shows the method, the number of
 observations, the key parameters, the cycle range, and how long the
 filter took to run.</p>
@@ -547,7 +549,7 @@ filter took to run.</p>
 <span><span class="co">#&gt;  $ df            : int 4</span></span>
 <span><span class="co">#&gt;  $ select_mstop  : logi FALSE</span></span>
 <span><span class="co">#&gt;  $ boundary.knots: NULL</span></span>
-<span><span class="co">#&gt;  $ compute_time  : num 0.139</span></span></code></pre></div>
+<span><span class="co">#&gt;  $ compute_time  : num 0.123</span></span></code></pre></div>
 <p>The <code>meta</code> list stores every parameter used by the filter,
 making results fully reproducible from the object alone — no need to
 track arguments separately.</p>
