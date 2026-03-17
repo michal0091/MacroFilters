@@ -28,6 +28,7 @@ Suggests:
     rmarkdown,
     strucchange,
     testthat (>= 3.0.0),
+    usethis,
     xts,
     zoo
 VignetteBuilder: knitr
