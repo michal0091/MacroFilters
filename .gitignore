@@ -10,3 +10,5 @@ renv/library
 docs
 /doc/
 /Meta/
+
+/.quarto/
