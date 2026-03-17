@@ -112,7 +112,7 @@ hp
 #>    Observations : 100
 #>    Parameters   : lambda = 1600
 #>    Cycle range  : [-7.738, 9.143]  sd = 3.897
-#>    Compute time : 0.003 s
+#>    Compute time : 0.002 s
 ```
 
 The smoothing parameter $\lambda$ is auto-selected from the series
@@ -296,7 +296,7 @@ mbh_res
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.138 s
+#>    Compute time : 0.139 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -323,7 +323,7 @@ mbh_res
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.138 s
+#>    Compute time : 0.139 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -358,7 +358,7 @@ str(mbh_res$meta)
 #>  $ df            : int 4
 #>  $ select_mstop  : logi FALSE
 #>  $ boundary.knots: NULL
-#>  $ compute_time  : num 0.138
+#>  $ compute_time  : num 0.139
 ```
 
 The `meta` list stores every parameter used by the filter, making
