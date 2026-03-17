@@ -64,6 +64,6 @@ print(result)
 #> -- MacroFilter [Hamilton] --
 #>    Observations : 200
 #>    Parameters   : h = 8, p = 4
-#>    Cycle range  : [-5.501, 6.003]  sd = 2.437
+#>    Cycle range  : [-5.844, 6.032]  sd = 2.48
 #>    Compute time : 0.000 s
 ```

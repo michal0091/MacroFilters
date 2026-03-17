@@ -70,6 +70,6 @@ print(result)
 #> -- MacroFilter [HP] --
 #>    Observations : 200
 #>    Parameters   : lambda = 1600
-#>    Cycle range  : [-2.878, 3.83]  sd = 1.387
-#>    Compute time : 0.002 s
+#>    Cycle range  : [-2.878, 3.83]  sd = 1.388
+#>    Compute time : 0.003 s
 ```

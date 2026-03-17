@@ -1,4 +1,8 @@
-# MacroFilters
+# MacroFilters \<img src=“man/figures/logo.png” align=“right” height=“139” alt=“” /\>
+
+[](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+
+[](https://github.com/michal0091/MacroFilters/actions/workflows/R-CMD-check.yaml)
 
 **MacroFilters** is a unified, high-performance library for extracting
 trend and cycle components from macroeconomic time series. It combines
@@ -9,128 +13,94 @@ shocks* such as COVID-19, financial crises, and wars.
 
 **Why MacroFilters instead of `mFilter` or `neverhpfilter`?**
 
-- **Speed:** The HP filter uses sparse-matrix Cholesky factorisation
-  (`Matrix`), scaling as *O(n)* instead of the dense *O(n³)* used by
-  most implementations.
 - **Robustness:**
   [`mbh_filter()`](https://michal0091.github.io/MacroFilters/reference/mbh_filter.md)
-  replaces squared-error loss with Huber loss, so a single extreme
-  quarter can never distort years of estimated trend.
+  replaces $L_{2}$ squared-error loss with Huber loss, ensuring extreme
+  exogenous shocks never distort the structural trend.
+
+- **Speed:** The HP implementation uses sparse-matrix Cholesky
+  factorisation (`Matrix`), scaling as *O(n)* instead of the dense
+  *O(n³)* used by legacy packages.
+
 - **Input agnosticism:** Pass a plain `numeric` vector, a `ts`, an
-  `xts`, or a `zoo` object — the output always matches the input class,
-  with no manual coercion required.
+  `xts`, or a `zoo` object — the output always matches the input class
+  seamlessly.
+
+## The End-Point Problem: Solved
+
+During extreme black swan events, traditional filters anchored in
+$L_{2}$ loss mechanically deform the long-run structural trend to absorb
+massive, transitory outliers.
+
+As demonstrated with Real US GDP during the 2020 Q2 COVID-19 collapse,
+the standard HP filter bends towards the shock. The MBH filter isolates
+the exogenous shock entirely within the cyclical component, preserving
+absolute trend integrity in real-time.
+
+\<img src=“man/figures/plot_covid_vintage.png” width=“100%” /\>
+
+Furthermore, ex-ante spectral alignment ensures the MBH filter perfectly
+matches the baseline cyclical volatility of the industry-standard HP
+filter during normal conditions, unlike the excessively volatile
+Hamilton filter.
+
+\<img src=“man/figures/plot_cycle_comparison.png” width=“100%” /\>
+
+*(Plots generated using real-time vintage data from the Federal Reserve
+Economic Data - FRED).*
 
 ## Installation
 
 ``` r
+
 # install.packages("devtools")
+
 devtools::install_github("michal0091/MacroFilters")
 ```
 
-## Quick Start
+## Quick Start Arsenal
 
-### Simulating a series with a COVID-19 shock
+Function \| Method \| Key Advantage \|
+
+\|—\|—\|—\|
+
+[`hp_filter()`](https://michal0091.github.io/MacroFilters/reference/hp_filter.md)
+\| Hodrick-Prescott (1997) \| Sparse *O(n)* implementation \|
+
+[`hamilton_filter()`](https://michal0091.github.io/MacroFilters/reference/hamilton_filter.md)
+\| Hamilton (2018) \| OLS regression, no spurious cycles \|
+
+[`bhp_filter()`](https://michal0091.github.io/MacroFilters/reference/bhp_filter.md)
+\| Boosted HP — Phillips & Shi (2021) \| Iterative fitting with BIC/ADF
+stopping \|
+
+[`mbh_filter()`](https://michal0091.github.io/MacroFilters/reference/mbh_filter.md)
+\| MacroBoost Hybrid \| Robust to outliers via Huber loss \|
+
+All functions return a `macrofilter` S3 object.
 
 ``` r
+
 library(MacroFilters)
-#> Registered S3 method overwritten by 'quantmod':
-#>   method            from
-#>   as.zoo.data.frame zoo
 
-set.seed(42)
-n    <- 80                              # ~20 years of quarterly data
-time <- 1:n
-# Long-run trend + business-cycle noise
-y_true <- 100 + 0.5 * time + 3 * sin(2 * pi * time / 16)
-y      <- y_true + rnorm(n, sd = 1.2)
 
-# Inject a sharp COVID-like contraction in period 60
-y[60] <- y[60] - 22
-y[61] <- y[61] - 15
-y[62] <- y[62] -  6
+# Fast, agnostic filtering on any time-series object
 
-gdp_ts <- ts(y, start = c(2001, 1), frequency = 4)
+hp_result  <- hp_filter(us_gdp_xts)
+
+mbh_result <- mbh_filter(us_gdp_xts)
+
+
+# Access components directly
+
+mbh_result$trend
+
+mbh_result$cycle
 ```
-
-### Extracting the trend with HP and MBH
-
-``` r
-hp_result  <- hp_filter(gdp_ts)
-mbh_result <- mbh_filter(gdp_ts)
-
-hp_result   # print S3 summary
-#> -- MacroFilter [HP] --
-#>    Observations : 80
-#>    Parameters   : lambda = 1600
-#>    Cycle range  : [-22.44, 5.885]  sd = 4.043
-#>    Compute time : 0.016 s
-mbh_result
-#> -- MacroFilter [MBH] --
-#>    Observations : 80
-#>    Parameters   : knots = 40, d = 2.021, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
-#>    Cycle range  : [-25.07, 4.85]  sd = 4.176
-#>    Compute time : 0.060 s
-```
-
-### Visualising the comparison
-
-``` r
-library(ggplot2)
-
-quarters <- time(gdp_ts)
-df <- data.frame(
-  time   = as.numeric(quarters),
-  data   = as.numeric(gdp_ts),
-  HP     = as.numeric(hp_result$trend),
-  MBH    = as.numeric(mbh_result$trend)
-)
-
-ggplot(df, aes(x = time)) +
-  geom_line(aes(y = data, colour = "Observed"),  linewidth = 0.6, linetype = "dashed") +
-  geom_line(aes(y = HP,   colour = "HP trend"),  linewidth = 1.0) +
-  geom_line(aes(y = MBH,  colour = "MBH trend"), linewidth = 1.0) +
-  annotate("rect",
-           xmin = df$time[59], xmax = df$time[63],
-           ymin = -Inf, ymax = Inf,
-           alpha = 0.12, fill = "firebrick") +
-  annotate("text",
-           x = df$time[61], y = max(df$data),
-           label = "COVID shock", vjust = -0.5,
-           size = 3.5, colour = "firebrick") +
-  scale_colour_manual(
-    values = c("Observed" = "grey60", "HP trend" = "#0072B2", "MBH trend" = "#E69F00")
-  ) +
-  labs(
-    title   = "Trend Extraction under a Structural Shock",
-    subtitle = "HP trend is pulled down by the shock; MBH trend remains smooth",
-    x = "Year", y = "GDP Index", colour = NULL
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "bottom")
-```
-
-![](reference/figures/README-quick-start-plot-1.png)
-
-The HP trend dips noticeably during the shock window, treating the
-extreme quarters as meaningful information about the long-run level. The
-MBH trend glides through undisturbed — the Huber loss down-weights those
-observations automatically.
-
-## The Filter Arsenal
-
-| Function                                                                                      | Method                             | Key Advantage                           |
-|-----------------------------------------------------------------------------------------------|------------------------------------|-----------------------------------------|
-| [`hp_filter()`](https://michal0091.github.io/MacroFilters/reference/hp_filter.md)             | Hodrick-Prescott (1997)            | Sparse *O(n)* implementation            |
-| [`hamilton_filter()`](https://michal0091.github.io/MacroFilters/reference/hamilton_filter.md) | Hamilton (2018)                    | OLS regression, no spurious cycles      |
-| [`bhp_filter()`](https://michal0091.github.io/MacroFilters/reference/bhp_filter.md)           | Boosted HP — Phillips & Shi (2021) | Iterative fitting with BIC/ADF stopping |
-| [`mbh_filter()`](https://michal0091.github.io/MacroFilters/reference/mbh_filter.md)           | MacroBoost Hybrid                  | Robust to outliers via Huber loss       |
-
-All functions return a `macrofilter` S3 object. Access components with
-`$trend`, `$cycle`, and `$meta`.
 
 ## Further Reading
 
 See
 [`vignette("introduction", package = "MacroFilters")`](https://michal0091.github.io/MacroFilters/articles/introduction.md)
-for a full walkthrough covering input agnosticism, all four filters, and
-the S3 print/meta interface.
+for a full walkthrough covering all four filters and the S3 print/meta
+interface.

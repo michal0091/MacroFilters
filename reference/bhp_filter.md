@@ -92,7 +92,7 @@ result <- bhp_filter(y)
 print(result)
 #> -- MacroFilter [bHP] --
 #>    Observations : 200
-#>    Parameters   : lambda = 1600, iterations = 93, stopping_rule = bic
-#>    Cycle range  : [-1.728, 1.688]  sd = 0.6928
-#>    Compute time : 0.017 s
+#>    Parameters   : lambda = 1600, iterations = 100, stopping_rule = bic
+#>    Cycle range  : [-1.713, 1.66]  sd = 0.6829
+#>    Compute time : 0.011 s
 ```
