@@ -3,13 +3,17 @@ Title: Robust Trend-Cycle Decomposition for Macroeconomic Time Series
 Version: 0.0.0.9000
 Authors@R: 
     person("Michal", "Kinel", , "michal.kinel@gmail.com", role = c("aut", "cre"))
-Description: Implements the Hybrid MacroBoost (MBH) protocol for decomposing 
-    macroeconomic time series into trend and cycle components. Unlike the standard 
-    Hodrick-Prescott filter, 'MacroFilters' utilizes component-wise L2-boosting 
-    with robust loss functions (Huber) to handle extreme transient shocks 
-    (e.g., COVID-19) without inducing spurious trend shifts. The algorithm 
-    includes an automated two-layer diagnostic stage for unit roots and structural 
-    breaks, optimized via corrected AICc for computational efficiency.
+Description: Provides high-performance tools for macroeconomic trend
+    extraction and filtering, specifically designed to solve the end-point
+    problem in real-time. Implements the MacroBoost Hybrid (MBH) filter
+    using penalized P-splines and gradient boosting. Unlike the standard
+    Hodrick-Prescott filter, 'MacroFilters' utilizes component-wise
+    L2-boosting with robust loss functions (Huber) to handle extreme
+    transient shocks (e.g., COVID-19) without inducing spurious trend
+    shifts. The algorithm includes an automated two-layer diagnostic stage
+    for unit roots and structural breaks, optimized via corrected AICc for
+    computational efficiency. Methodology detailed in Kinel (2026)
+    <doi:10.2139/ssrn.6371138>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

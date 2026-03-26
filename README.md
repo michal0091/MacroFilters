@@ -4,6 +4,11 @@
 [](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [](https://github.com/michal0091/MacroFilters/actions/workflows/R-CMD-check.yaml)
 
+> **Working Paper Available:** The econometric methodology and
+> mathematical proofs underlying this package are distributed via SSRN:
+> [Robust Real-Time Macroeconomic Trend Extraction: A Gradient Boosting
+> Approach](https://ssrn.com/abstract=6371138).
+
 **MacroFilters** is a unified, high-performance library for extracting
 trend and cycle components from macroeconomic time series. It combines
 classical filters (Hodrick-Prescott, Hamilton, Boosted HP) with its
