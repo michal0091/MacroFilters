@@ -154,7 +154,7 @@ ham
 #>    Observations : 100
 #>    Parameters   : h = 8, p = 4
 #>    Cycle range  : [-13.41, 11.8]  sd = 7.212
-#>    Compute time : 0.000 s
+#>    Compute time : 0.001 s
 ```
 
 Note that the first $h + p - 1$ observations of the trend and cycle are
@@ -187,7 +187,7 @@ bhp
 #>    Observations : 100
 #>    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic
 #>    Cycle range  : [-5.487, 4.068]  sd = 1.857
-#>    Compute time : 0.003 s
+#>    Compute time : 0.004 s
 ```
 
 Internally, **MacroFilters** precomputes the sparse penalty matrix
@@ -296,7 +296,7 @@ mbh_res
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.123 s
+#>    Compute time : 0.126 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -323,7 +323,7 @@ mbh_res
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.123 s
+#>    Compute time : 0.126 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -358,7 +358,7 @@ str(mbh_res$meta)
 #>  $ df            : int 4
 #>  $ select_mstop  : logi FALSE
 #>  $ boundary.knots: NULL
-#>  $ compute_time  : num 0.123
+#>  $ compute_time  : num 0.126
 ```
 
 The `meta` list stores every parameter used by the filter, making
