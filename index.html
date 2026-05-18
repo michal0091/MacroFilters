@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="favicon.ico">
 <link rel="manifest" href="site.webmanifest">
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Robust Trend-Cycle Decomposition for Macroeconomic Time Series">
 <meta name="description" content="Provides high-performance tools for macroeconomic trend extraction and filtering, specifically designed to solve the end-point problem in real-time. Implements the MacroBoost Hybrid (MBH) filter using penalized P-splines and gradient boosting. Unlike the standard Hodrick-Prescott filter, MacroFilters utilizes component-wise L2-boosting with robust loss functions (Huber) to handle extreme transient shocks (e.g., COVID-19) without inducing spurious trend shifts. The algorithm includes an automated two-layer diagnostic stage for unit roots and structural breaks, optimized via corrected AICc for computational efficiency. Methodology detailed in Kinel (2026) &lt;doi:10.2139/ssrn.6371138&gt;.">
@@ -104,28 +104,28 @@
 <col width="33%">
 <col width="33%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th>Function</th>
 <th>Method</th>
 <th>Key Advantage</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/hp_filter.html">hp_filter()</a></code></td>
 <td>Hodrick-Prescott (1997)</td>
 <td>Sparse <em>O(n)</em> implementation</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/hamilton_filter.html">hamilton_filter()</a></code></td>
 <td>Hamilton (2018)</td>
 <td>OLS regression, no spurious cycles</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/bhp_filter.html">bhp_filter()</a></code></td>
 <td>Boosted HP — Phillips &amp; Shi (2021)</td>
 <td>Iterative fitting with BIC/ADF stopping</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/mbh_filter.html">mbh_filter()</a></code></td>
 <td>MacroBoost Hybrid</td>
 <td>Robust to outliers via Huber loss</td>
@@ -166,6 +166,12 @@
 </ul>
 </div>
 
+<div class="community">
+<h2 data-toc-skip>Community</h2>
+<ul class="list-unstyled">
+<li><a href="CONTRIBUTING.html">Contributing guide</a></li>
+</ul>
+</div>
 
 <div class="citation">
 <h2 data-toc-skip>Citation</h2>

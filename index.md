@@ -19,7 +19,7 @@ shocks* such as COVID-19, financial crises, and wars.
 
 - **Robustness:**
   [`mbh_filter()`](https://michal0091.github.io/MacroFilters/reference/mbh_filter.md)
-  replaces $L_{2}$ squared-error loss with Huber loss, ensuring extreme
+  replaces $`L_2`$ squared-error loss with Huber loss, ensuring extreme
   exogenous shocks never distort the structural trend.
 - **Speed:** The HP implementation uses sparse-matrix Cholesky
   factorisation (`Matrix`), scaling as *O(n)* instead of the dense
@@ -31,7 +31,7 @@ shocks* such as COVID-19, financial crises, and wars.
 ## The End-Point Problem: Solved
 
 During extreme black swan events, traditional filters anchored in
-$L_{2}$ loss mechanically deform the long-run structural trend to absorb
+$`L_2`$ loss mechanically deform the long-run structural trend to absorb
 massive, transitory outliers.
 
 As demonstrated with Real US GDP during the 2020 Q2 COVID-19 collapse,
@@ -54,22 +54,24 @@ Economic Data - FRED).*
 ## Installation
 
 ``` r
+
 # install.packages("devtools")
 devtools::install_github("michal0091/MacroFilters")
 ```
 
 ## Quick Start Arsenal
 
-| Function                                                                                      | Method                             | Key Advantage                           |
-|-----------------------------------------------------------------------------------------------|------------------------------------|-----------------------------------------|
-| [`hp_filter()`](https://michal0091.github.io/MacroFilters/reference/hp_filter.md)             | Hodrick-Prescott (1997)            | Sparse *O(n)* implementation            |
-| [`hamilton_filter()`](https://michal0091.github.io/MacroFilters/reference/hamilton_filter.md) | Hamilton (2018)                    | OLS regression, no spurious cycles      |
-| [`bhp_filter()`](https://michal0091.github.io/MacroFilters/reference/bhp_filter.md)           | Boosted HP — Phillips & Shi (2021) | Iterative fitting with BIC/ADF stopping |
-| [`mbh_filter()`](https://michal0091.github.io/MacroFilters/reference/mbh_filter.md)           | MacroBoost Hybrid                  | Robust to outliers via Huber loss       |
+| Function | Method | Key Advantage |
+|----|----|----|
+| [`hp_filter()`](https://michal0091.github.io/MacroFilters/reference/hp_filter.md) | Hodrick-Prescott (1997) | Sparse *O(n)* implementation |
+| [`hamilton_filter()`](https://michal0091.github.io/MacroFilters/reference/hamilton_filter.md) | Hamilton (2018) | OLS regression, no spurious cycles |
+| [`bhp_filter()`](https://michal0091.github.io/MacroFilters/reference/bhp_filter.md) | Boosted HP — Phillips & Shi (2021) | Iterative fitting with BIC/ADF stopping |
+| [`mbh_filter()`](https://michal0091.github.io/MacroFilters/reference/mbh_filter.md) | MacroBoost Hybrid | Robust to outliers via Huber loss |
 
 All functions return a `macrofilter` S3 object.
 
 ``` r
+
 library(MacroFilters)
 
 # Fast, agnostic filtering on any time-series object

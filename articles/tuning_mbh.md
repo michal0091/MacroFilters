@@ -26,12 +26,15 @@ series (~100–400 observations).
 more iterations to reach the same fit quality; higher `nu` converges
 faster but may overshoot. The key identity is:
 
-$$\text{effective update} \approx \nu \times \text{mstop} \times \text{step size}$$
+``` math
+\text{effective update} \approx \nu \times \text{mstop} \times \text{step size}
+```
 
 A practical equivalence: `(mstop = 500, nu = 0.1)` and
 `(mstop = 1000, nu = 0.05)` produce nearly identical trends.
 
 ``` r
+
 y <- us_gdp_vintage$gdp_log
 
 res_default <- mbh_filter(y, mstop = 500,  nu = 0.10)
@@ -59,32 +62,33 @@ knots with low `mstop` may leave some basis functions unfitted.
 
 The Huber loss function
 
-$$L_{\delta}(r) = \begin{cases}
-{\frac{1}{2}r^{2}} & {|r| \leq \delta} \\
-{\delta\,|r| - \frac{1}{2}\delta^{2}} & {|r| > \delta}
-\end{cases}$$
+``` math
+L_\delta(r) = \begin{cases} \tfrac{1}{2}r^2 & |r| \le \delta \\ \delta\,|r| - \tfrac{1}{2}\delta^2 & |r| > \delta \end{cases}
+```
 
-transitions between $L_{2}$ (quadratic) loss for small residuals and
-$L_{1}$ (absolute) loss for large ones. The threshold $\delta$
+transitions between $`L_2`$ (quadratic) loss for small residuals and
+$`L_1`$ (absolute) loss for large ones. The threshold $`\delta`$
 determines which residuals are treated as outliers.
 
 When `d = NULL`, the threshold is set automatically via the **MAD of
 first differences**:
 
-$$\widehat{d} = \text{MAD}(\Delta y) = \frac{\text{median}\left( \left| \Delta y - \text{median}(\Delta y) \right| \right)}{0.6745}$$
+``` math
+\hat{d} = \text{MAD}(\Delta y) = \frac{\text{median}(|\Delta y - \text{median}(\Delta y)|)}{0.6745}
+```
 
-The $0.6745$ scale factor makes MAD a consistent estimator of the
+The $`0.6745`$ scale factor makes MAD a consistent estimator of the
 standard deviation under normality.
 
 ### 2.1 Scale invariance
 
-If $\left. y\rightarrow a \cdot y \right.$, then
-$\left. \Delta y\rightarrow a \cdot \Delta y \right.$ and
-$\left. \widehat{d}\rightarrow a \cdot \widehat{d} \right.$. The Huber
-threshold scales exactly with the data amplitude, so the filter behaves
-identically regardless of the measurement units.
+If $`y \to a \cdot y`$, then $`\Delta y \to a \cdot \Delta y`$ and
+$`\hat{d} \to a \cdot \hat{d}`$. The Huber threshold scales exactly with
+the data amplitude, so the filter behaves identically regardless of the
+measurement units.
 
 ``` r
+
 y_level <- us_gdp_vintage$gdp_real   # billions USD (~20 000 scale)
 y_log   <- us_gdp_vintage$gdp_log    # natural log (~10 scale)
 
@@ -114,6 +118,7 @@ near-straight line.
 The recommended override is:
 
 ``` r
+
 d_cycle <- mad(hp_filter(y_log)$cycle)   # set d on the residual scale
 res     <- mbh_filter(y_log, d = d_cycle)
 ```
@@ -124,11 +129,12 @@ res     <- mbh_filter(y_log, d = d_cycle)
 
 Quarterly GDP growth rates (`diff(log(GDP))`) are roughly 40× more
 volatile relative to trend than log levels. The COVID collapse of 2020
-Q2 ($\approx - 9\%$ q-o-q) represents an extreme outlier even by
+Q2 ($`\approx -9\%`$ q-o-q) represents an extreme outlier even by
 growth-rate standards. This makes growth rates an ideal stress test for
 `d` sensitivity.
 
 ``` r
+
 y_growth <- diff(us_gdp_vintage$gdp_log)   # quarterly log-differences
 
 res_auto   <- mbh_filter(y_growth)
@@ -140,6 +146,7 @@ cat(sprintf("Auto d = %.6f\n", res_auto$meta$d))
 ```
 
 ``` r
+
 dt_growth <- data.table(
   t        = us_gdp_vintage$date[-1],
   observed = y_growth,
@@ -209,7 +216,7 @@ print(p_d)
   The COVID spike is substantially down-weighted but ordinary
   fluctuations are fitted.
 - **Lenient `d = 0.020`** (orange): threshold is loose; the filter
-  behaves close to $L_{2}$ boosting and the trend responds to the COVID
+  behaves close to $`L_2`$ boosting and the trend responds to the COVID
   shock.
 
 ------------------------------------------------------------------------
@@ -217,6 +224,7 @@ print(p_d)
 ## 4 Computational Trade-off Benchmark
 
 ``` r
+
 y          <- us_gdp_vintage$gdp_log
 mstop_grid <- seq(100L, 1000L, by = 100L)   # 10 evenly-spaced points
 
@@ -241,20 +249,21 @@ knitr::kable(
 
 | mstop | Wall time (s) | Cycle SD |
 |------:|--------------:|---------:|
-|   100 |         0.041 | 0.643260 |
-|   200 |         0.081 | 0.584503 |
-|   300 |         0.106 | 0.526034 |
-|   400 |         0.129 | 0.467963 |
-|   500 |         0.147 | 0.410462 |
-|   600 |         0.167 | 0.353805 |
-|   700 |         0.183 | 0.298887 |
-|   800 |         0.213 | 0.247910 |
-|   900 |         0.226 | 0.201850 |
-|  1000 |         0.271 | 0.162069 |
+|   100 |         0.039 | 0.643260 |
+|   200 |         0.127 | 0.584503 |
+|   300 |         0.100 | 0.526034 |
+|   400 |         0.124 | 0.467963 |
+|   500 |         0.149 | 0.410462 |
+|   600 |         0.165 | 0.353805 |
+|   700 |         0.192 | 0.298887 |
+|   800 |         0.208 | 0.247910 |
+|   900 |         0.242 | 0.201850 |
+|  1000 |         0.494 | 0.162069 |
 
-MBH computational benchmark — US log GDP (316 obs)
+MBH computational benchmark — US log GDP (316 obs) {.table}
 
 ``` r
+
 # Dual-axis layout: wall time (left) + cycle_sd convergence (right)
 # Use a secondary-axis trick by normalising cycle_sd to the time scale
 time_range  <- range(bench_dt$elapsed_sec)
@@ -312,11 +321,11 @@ prohibitively slow.
 
 ## 5 Summary
 
-| Parameter | Default        | When to increase                             | When to decrease                                  |
-|:----------|:---------------|:---------------------------------------------|:--------------------------------------------------|
-| `mstop`   | 500            | Publication accuracy required                | Exploratory / fast iteration                      |
-| `nu`      | 0.1            | Very long series; computational budget tight | Stability preferred over speed                    |
-| `knots`   | `max(20, n/2)` | Highly nonlinear trend                       | Short series or near-linear trend                 |
-| `d`       | auto via MAD   | Series has frequent large spikes             | Series is log-level (use `mad(hp$cycle)` instead) |
+| Parameter | Default | When to increase | When to decrease |
+|:---|:---|:---|:---|
+| `mstop` | 500 | Publication accuracy required | Exploratory / fast iteration |
+| `nu` | 0.1 | Very long series; computational budget tight | Stability preferred over speed |
+| `knots` | `max(20, n/2)` | Highly nonlinear trend | Short series or near-linear trend |
+| `d` | auto via MAD | Series has frequent large spikes | Series is log-level (use `mad(hp$cycle)` instead) |
 
-MBH hyperparameter quick-reference
+MBH hyperparameter quick-reference {.table}

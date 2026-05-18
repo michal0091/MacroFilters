@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Introduction to MacroFilters">
 </head>
@@ -179,7 +179,7 @@ before returning.</p>
 </h3>
 <p>The Hodrick-Prescott (1997) filter is the workhorse of macroeconomic
 trend extraction. It solves the penalised least-squares problem:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mo>min</mo><mi>τ</mi></munder><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>−</mo><msub><mi>τ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo>+</mo><mi>λ</mi><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>2</mn></mrow><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></munderover><msup><mrow><mo stretchy="true" form="prefix">[</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>τ</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>−</mo><msub><mi>τ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>τ</mi><mi>t</mi></msub><mo>−</mo><msub><mi>τ</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mi mathvariant="normal">min</mi><mi>τ</mi></munder><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>−</mo><msub><mi>τ</mi><mi>t</mi></msub><msup><mo stretchy="false" form="postfix">)</mo><mn>2</mn></msup><mo>+</mo><mi>λ</mi><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>2</mn></mrow><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></munderover><mo stretchy="false" form="prefix">[</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>τ</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>−</mo><msub><mi>τ</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>τ</mi><mi>t</mi></msub><mo>−</mo><msub><mi>τ</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo><msup><mo stretchy="false" form="postfix">]</mo><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">
 \min_{\tau} \sum_{t=1}^{n}(y_t - \tau_t)^2 + \lambda \sum_{t=2}^{n-1}[(\tau_{t+1} - \tau_t) - (\tau_t - \tau_{t-1})]^2
 </annotation></semantics></math></p>
 <p>The second term penalises curvature in the trend;
@@ -188,9 +188,9 @@ controls the smoothness.</p>
 <p>Most implementations solve this by inverting a dense
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>×</mo><mi>n</mi></mrow><annotation encoding="application/x-tex">n \times n</annotation></semantics></math>
 matrix, which is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>n</mi><mn>3</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">O(n^3)</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>n</mi><mn>3</mn></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">O(n^3)</annotation></semantics></math>.
 <strong>MacroFilters</strong> recognises that the penalty matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi><mi>′</mi><mi>D</mi></mrow><annotation encoding="application/x-tex">D'D</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>D</mi><mo>′</mo></msup><mi>D</mi></mrow><annotation encoding="application/x-tex">D'D</annotation></semantics></math>
 is <em>pentadiagonal</em> (a sparse banded structure) and solves the
 system using <code><a href="https://rdrr.io/pkg/Matrix/man/bandSparse.html" class="external-link">Matrix::bandSparse()</a></code> and sparse Cholesky
 factorisation — bringing the cost down to <strong>O(n)</strong> in time
@@ -256,7 +256,7 @@ estimates by construction</p>
 <span><span class="co">#&gt;    Observations : 100</span></span>
 <span><span class="co">#&gt;    Parameters   : h = 8, p = 4</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-13.41, 11.8]  sd = 7.212</span></span>
-<span><span class="co">#&gt;    Compute time : 0.001 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.000 s</span></span></code></pre></div>
 <p>Note that the first
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mo>+</mo><mi>p</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">h + p - 1</annotation></semantics></math>
 observations of the trend and cycle are <code>NA</code>, because there
@@ -271,7 +271,7 @@ at each step, the filter is re-run on the <em>residuals</em> from the
 previous pass, and the resulting increment is added to the trend
 estimate. This procedure converges to a trend that better tracks
 stochastic variation.</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>τ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>m</mi><mo stretchy="true" form="postfix">)</mo></mrow></msup><mo>=</mo><msup><mi>τ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>m</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></msup><mo>+</mo><msub><mi>S</mi><mi>λ</mi></msub><mo>⋅</mo><msup><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>m</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></msup><mo>,</mo><mspace width="2.0em"></mspace><msup><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>m</mi><mo stretchy="true" form="postfix">)</mo></mrow></msup><mo>=</mo><mi>y</mi><mo>−</mo><msup><mi>τ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>m</mi><mo stretchy="true" form="postfix">)</mo></mrow></msup></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>τ</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>m</mi><mo stretchy="false" form="postfix">)</mo></mrow></msup><mo>=</mo><msup><mi>τ</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>m</mi><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></msup><mo>+</mo><msub><mi>S</mi><mi>λ</mi></msub><mo>⋅</mo><msup><mi>c</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>m</mi><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></msup><mo>,</mo><mspace width="2.0em"></mspace><msup><mi>c</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>m</mi><mo stretchy="false" form="postfix">)</mo></mrow></msup><mo>=</mo><mi>y</mi><mo>−</mo><msup><mi>τ</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>m</mi><mo stretchy="false" form="postfix">)</mo></mrow></msup></mrow><annotation encoding="application/x-tex">
 \tau^{(m)} = \tau^{(m-1)} + S_\lambda \cdot c^{(m-1)}, \qquad c^{(m)} = y - \tau^{(m)}
 </annotation></semantics></math></p>
 <p>where
@@ -310,10 +310,10 @@ test</td>
 <span><span class="co">#&gt;    Observations : 100</span></span>
 <span><span class="co">#&gt;    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-5.487, 4.068]  sd = 1.857</span></span>
-<span><span class="co">#&gt;    Compute time : 0.004 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.003 s</span></span></code></pre></div>
 <p>Internally, <strong>MacroFilters</strong> precomputes the sparse
 penalty matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Q</mi><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>I</mi><mo>+</mo><mi>λ</mi><mi>D</mi><mi>′</mi><mi>D</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">Q = (I + \lambda D'D)^{-1}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Q</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mi>I</mi><mo>+</mo><mi>λ</mi><msup><mi>D</mi><mo>′</mo></msup><mi>D</mi><msup><mo stretchy="false" form="postfix">)</mo><mrow><mi>−</mi><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">Q = (I + \lambda D'D)^{-1}</annotation></semantics></math>
 once and reuses it across all iterations, so the cost per iteration is a
 single sparse matrix–vector multiply rather than a full solve.</p>
 <hr>
@@ -337,7 +337,7 @@ subsequent output gap estimate.</p>
 </h3>
 <p>The <strong>MacroBoost Hybrid (MBH)</strong> filter replaces squared
 loss with <strong>Huber loss</strong>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>L</mi><mi>δ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mfrac displaystyle="true"><msup><mi>r</mi><mn>2</mn></msup><mn>2</mn></mfrac></mtd><mtd columnalign="left" style="text-align: left"><mrow><mo stretchy="true" form="prefix">|</mo><mi>r</mi><mo stretchy="true" form="postfix">|</mo></mrow><mo>≤</mo><mi>δ</mi></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi>δ</mi><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mo stretchy="true" form="prefix">|</mo><mi>r</mi><mo stretchy="true" form="postfix">|</mo></mrow><mo>−</mo><mfrac displaystyle="true"><mi>δ</mi><mn>2</mn></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mrow><mo stretchy="true" form="prefix">|</mo><mi>r</mi><mo stretchy="true" form="postfix">|</mo></mrow><mo>&gt;</mo><mi>δ</mi></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>L</mi><mi>δ</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>r</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mstyle displaystyle="true"><mfrac><msup><mi>r</mi><mn>2</mn></msup><mn>2</mn></mfrac></mstyle></mtd><mtd columnalign="left" style="text-align: left"><mo stretchy="false" form="prefix">|</mo><mi>r</mi><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mi>δ</mi></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi>δ</mi><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mo stretchy="false" form="prefix">|</mo><mi>r</mi><mo stretchy="false" form="prefix">|</mo><mi>−</mi><mstyle displaystyle="true"><mfrac><mi>δ</mi><mn>2</mn></mfrac></mstyle><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mo stretchy="false" form="prefix">|</mo><mi>r</mi><mo stretchy="false" form="prefix">|</mo><mo>&gt;</mo><mi>δ</mi></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">
 L_\delta(r) = \begin{cases}
 \dfrac{r^2}{2} &amp; |r| \leq \delta \\[6pt]
 \delta\!\left(|r| - \dfrac{\delta}{2}\right) &amp; |r| &gt; \delta
@@ -356,7 +356,7 @@ reducing their influence on the trend estimate.</p>
 </h3>
 <p>The trend is decomposed into two additive base learners fitted via
 <strong>component-wise L2-boosting</strong> (<code>mboost</code>):</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>τ</mi><mo accent="true">̂</mo></mover><mi>t</mi></msub><mo>=</mo><munder><munder><mrow><msub><mi>b</mi><mn>0</mn></msub><mo>+</mo><msub><mi>b</mi><mn>1</mn></msub><mo>⋅</mo><mi>t</mi></mrow><mo accent="true">⏟</mo></munder><mtext mathvariant="normal">Global linear drift</mtext></munder><mo>+</mo><munder><munder><mrow><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mo accent="true">⏟</mo></munder><mtext mathvariant="normal">Local curvature (P-spline)</mtext></munder></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>τ</mi><mo accent="true">̂</mo></mover><mi>t</mi></msub><mo>=</mo><munder><munder><mrow><msub><mi>b</mi><mn>0</mn></msub><mo>+</mo><msub><mi>b</mi><mn>1</mn></msub><mo>⋅</mo><mi>t</mi></mrow><mo accent="true">⏟</mo></munder><mtext mathvariant="normal">Global linear drift</mtext></munder><mo>+</mo><munder><munder><mrow><mi>f</mi><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><mo accent="true">⏟</mo></munder><mtext mathvariant="normal">Local curvature (P-spline)</mtext></munder></mrow><annotation encoding="application/x-tex">
 \hat{\tau}_t = \underbrace{b_0 + b_1 \cdot t}_{\text{Global linear drift}} + \underbrace{f(t)}_{\text{Local curvature (P-spline)}}
 </annotation></semantics></math></p>
 <ul>
@@ -466,7 +466,7 @@ dates.</p>
 <span><span class="co">#&gt;    Observations : 80</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
-<span><span class="co">#&gt;    Compute time : 0.126 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.124 s</span></span></code></pre></div>
 <p><img src="introduction_files/figure-html/mbh-plot-1.png" class="r-plt" alt="" width="100%"></p>
 <hr>
 </div>
@@ -514,7 +514,7 @@ dates.</p>
 <span><span class="co">#&gt;    Observations : 80</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
-<span><span class="co">#&gt;    Compute time : 0.126 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.124 s</span></span></code></pre></div>
 <p>The <code>print</code> method shows the method, the number of
 observations, the key parameters, the cycle range, and how long the
 filter took to run.</p>
@@ -549,7 +549,7 @@ filter took to run.</p>
 <span><span class="co">#&gt;  $ df            : int 4</span></span>
 <span><span class="co">#&gt;  $ select_mstop  : logi FALSE</span></span>
 <span><span class="co">#&gt;  $ boundary.knots: NULL</span></span>
-<span><span class="co">#&gt;  $ compute_time  : num 0.126</span></span></code></pre></div>
+<span><span class="co">#&gt;  $ compute_time  : num 0.124</span></span></code></pre></div>
 <p>The <code>meta</code> list stores every parameter used by the filter,
 making results fully reproducible from the object alone — no need to
 track arguments separately.</p>

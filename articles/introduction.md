@@ -1,6 +1,7 @@
 # Introduction to MacroFilters
 
 ``` r
+
 library(MacroFilters)
 library(ggplot2)
 ```
@@ -16,9 +17,11 @@ analysis, the output gap, and potential GDP estimation.
 
 Every series can be written as:
 
-$$y_{t} = \tau_{t} + c_{t}$$
+``` math
+y_t = \tau_t + c_t
+```
 
-where $\tau_{t}$ is the trend and $c_{t}$ is the cyclical component. The
+where $`\tau_t`$ is the trend and $`c_t`$ is the cyclical component. The
 challenge is that any filter must decide whether an unusual observation
 represents a *genuine shock to the trend* or a *transitory deviation
 that belongs in the cycle*.
@@ -57,6 +60,7 @@ Supported input classes:
 ### Example: same filter, two input formats
 
 ``` r
+
 set.seed(7)
 y_raw <- cumsum(rnorm(60)) + (1:60) * 0.3   # a simple integrated series
 
@@ -87,20 +91,23 @@ returning.
 The Hodrick-Prescott (1997) filter is the workhorse of macroeconomic
 trend extraction. It solves the penalised least-squares problem:
 
-$$\min\limits_{\tau}\sum\limits_{t = 1}^{n}\left( y_{t} - \tau_{t} \right)^{2} + \lambda\sum\limits_{t = 2}^{n - 1}\left\lbrack \left( \tau_{t + 1} - \tau_{t} \right) - \left( \tau_{t} - \tau_{t - 1} \right) \right\rbrack^{2}$$
+``` math
+\min_{\tau} \sum_{t=1}^{n}(y_t - \tau_t)^2 + \lambda \sum_{t=2}^{n-1}[(\tau_{t+1} - \tau_t) - (\tau_t - \tau_{t-1})]^2
+```
 
-The second term penalises curvature in the trend; $\lambda$ controls the
-smoothness.
+The second term penalises curvature in the trend; $`\lambda`$ controls
+the smoothness.
 
-Most implementations solve this by inverting a dense $n \times n$
-matrix, which is $O\left( n^{3} \right)$. **MacroFilters** recognises
-that the penalty matrix $D\prime D$ is *pentadiagonal* (a sparse banded
-structure) and solves the system using
+Most implementations solve this by inverting a dense $`n \times n`$
+matrix, which is $`O(n^3)`$. **MacroFilters** recognises that the
+penalty matrix $`D'D`$ is *pentadiagonal* (a sparse banded structure)
+and solves the system using
 [`Matrix::bandSparse()`](https://rdrr.io/pkg/Matrix/man/bandSparse.html)
 and sparse Cholesky factorisation — bringing the cost down to **O(n)**
 in time and memory.
 
 ``` r
+
 set.seed(42)
 n  <- 100
 y  <- ts(100 + 0.4 * (1:n) + 5 * sin(2 * pi * (1:n) / 20) + rnorm(n, sd = 2),
@@ -115,14 +122,16 @@ hp
 #>    Compute time : 0.002 s
 ```
 
-The smoothing parameter $\lambda$ is auto-selected from the series
+The smoothing parameter $`\lambda`$ is auto-selected from the series
 frequency via the Ravn-Uhlig (2002) heuristic:
 
-$$\lambda = 6.25 \times \text{freq}^{4}$$
+``` math
+\lambda = 6.25 \times \text{freq}^4
+```
 
-which gives $\lambda = 1,600$ for quarterly and $\lambda = 129,600$ for
-monthly data — the conventional values. You can override it explicitly:
-`hp_filter(y, lambda = 1600)`.
+which gives $`\lambda = 1{,}600`$ for quarterly and
+$`\lambda = 129{,}600`$ for monthly data — the conventional values. You
+can override it explicitly: `hp_filter(y, lambda = 1600)`.
 
 ![](introduction_files/figure-html/hp-plot-1.png)
 
@@ -133,13 +142,15 @@ monthly data — the conventional values. You can override it explicitly:
 ### 3.2 `hamilton_filter()` — Regression-Based Alternative
 
 Hamilton (2018) proposes replacing the HP filter entirely with an OLS
-regression. The idea: project $y_{t + h}$ on a constant and $p$ lags of
-$y_{t}$:
+regression. The idea: project $`y_{t+h}`$ on a constant and $`p`$ lags
+of $`y_t`$:
 
-$$y_{t + h} = \alpha_{0} + \alpha_{1}y_{t} + \alpha_{2}y_{t - 1} + \cdots + \alpha_{p}y_{t - p + 1} + c_{t}$$
+``` math
+y_{t+h} = \alpha_0 + \alpha_1 y_t + \alpha_2 y_{t-1} + \cdots + \alpha_p y_{t-p+1} + c_t
+```
 
 The fitted values form the trend; the residuals form the cycle. The
-horizon $h$ is set to two years ahead by default (e.g., $h = 8$
+horizon $`h`$ is set to two years ahead by default (e.g., $`h = 8`$
 quarters), long enough to capture business-cycle variation without
 filtering it out.
 
@@ -148,17 +159,18 @@ from integrated series - Produces stationary cycle estimates by
 construction
 
 ``` r
+
 ham <- hamilton_filter(y)      # auto-detects h = 8 for quarterly
 ham
 #> -- MacroFilter [Hamilton] --
 #>    Observations : 100
 #>    Parameters   : h = 8, p = 4
 #>    Cycle range  : [-13.41, 11.8]  sd = 7.212
-#>    Compute time : 0.001 s
+#>    Compute time : 0.000 s
 ```
 
-Note that the first $h + p - 1$ observations of the trend and cycle are
-`NA`, because there is insufficient history for the regression.
+Note that the first $`h + p - 1`$ observations of the trend and cycle
+are `NA`, because there is insufficient history for the regression.
 
 ------------------------------------------------------------------------
 
@@ -169,31 +181,34 @@ each step, the filter is re-run on the *residuals* from the previous
 pass, and the resulting increment is added to the trend estimate. This
 procedure converges to a trend that better tracks stochastic variation.
 
-$$\tau^{(m)} = \tau^{(m - 1)} + S_{\lambda} \cdot c^{(m - 1)},\qquad c^{(m)} = y - \tau^{(m)}$$
+``` math
+\tau^{(m)} = \tau^{(m-1)} + S_\lambda \cdot c^{(m-1)}, \qquad c^{(m)} = y - \tau^{(m)}
+```
 
-where $S_{\lambda}$ is the HP smoothing operator. Three stopping rules
+where $`S_\lambda`$ is the HP smoothing operator. Three stopping rules
 are available:
 
-| Rule              | Description                                                             |
-|-------------------|-------------------------------------------------------------------------|
-| `"bic"` (default) | Minimise the Schwarz information criterion                              |
-| `"adf"`           | Stop when the cycle passes an Augmented Dickey-Fuller stationarity test |
-| `"fixed"`         | Run exactly `iter_max` iterations                                       |
+| Rule | Description |
+|----|----|
+| `"bic"` (default) | Minimise the Schwarz information criterion |
+| `"adf"` | Stop when the cycle passes an Augmented Dickey-Fuller stationarity test |
+| `"fixed"` | Run exactly `iter_max` iterations |
 
 ``` r
+
 bhp <- bhp_filter(y, stopping = "bic")
 bhp
 #> -- MacroFilter [bHP] --
 #>    Observations : 100
 #>    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic
 #>    Cycle range  : [-5.487, 4.068]  sd = 1.857
-#>    Compute time : 0.004 s
+#>    Compute time : 0.003 s
 ```
 
 Internally, **MacroFilters** precomputes the sparse penalty matrix
-$Q = (I + \lambda D\prime D)^{- 1}$ once and reuses it across all
-iterations, so the cost per iteration is a single sparse matrix–vector
-multiply rather than a full solve.
+$`Q = (I + \lambda D'D)^{-1}`$ once and reuses it across all iterations,
+so the cost per iteration is a single sparse matrix–vector multiply
+rather than a full solve.
 
 ------------------------------------------------------------------------
 
@@ -213,14 +228,16 @@ gap estimate.
 The **MacroBoost Hybrid (MBH)** filter replaces squared loss with
 **Huber loss**:
 
-$$L_{\delta}(r) = \begin{cases}
-\frac{r^{2}}{2} & {|r| \leq \delta} \\
-{\delta\!\left( |r| - \frac{\delta}{2} \right)} & {|r| > \delta}
-\end{cases}$$
+``` math
+L_\delta(r) = \begin{cases}
+\dfrac{r^2}{2} & |r| \leq \delta \\[6pt]
+\delta\!\left(|r| - \dfrac{\delta}{2}\right) & |r| > \delta
+\end{cases}
+```
 
-Observations with residuals smaller than $\delta$ are treated like
+Observations with residuals smaller than $`\delta`$ are treated like
 ordinary squared-error observations. Observations with residuals larger
-than $\delta$ — the structural shocks — contribute only *linearly*,
+than $`\delta`$ — the structural shocks — contribute only *linearly*,
 massively reducing their influence on the trend estimate.
 
 ### Additive Model
@@ -228,7 +245,9 @@ massively reducing their influence on the trend estimate.
 The trend is decomposed into two additive base learners fitted via
 **component-wise L2-boosting** (`mboost`):
 
-$${\widehat{\tau}}_{t} = \underset{\text{Global linear drift}}{\underbrace{b_{0} + b_{1} \cdot t}} + \underset{\text{Local curvature (P-spline)}}{\underbrace{f(t)}}$$
+``` math
+\hat{\tau}_t = \underbrace{b_0 + b_1 \cdot t}_{\text{Global linear drift}} + \underbrace{f(t)}_{\text{Local curvature (P-spline)}}
+```
 
 - **`bols(time, intercept = TRUE)`** — captures the global linear drift.
 - **`bbs(time, knots, degree = 3, differences = 2, boundary.knots)`** —
@@ -242,13 +261,13 @@ shock-contaminated quarters are downweighted.
 
 ### Parameters
 
-| Parameter        | Default        | Role                                                                                                             |
-|------------------|----------------|------------------------------------------------------------------------------------------------------------------|
-| `knots`          | `max(20, n/2)` | P-spline flexibility — higher = more local adaptability                                                          |
-| `mstop`          | `500`          | Boosting iterations — more = finer approximation                                                                 |
-| `d`              | `NULL (Auto)`  | Huber delta — if `NULL`, auto-set via MAD of first differences (scale-invariant)                                 |
-| `nu`             | `0.2`          | Shrinkage / learning rate — controls step size per iteration                                                     |
-| `boundary.knots` | `NULL`         | B-spline domain anchor — if `NULL`, uses `range(time_idx)`; fix to `c(1, T_max)` for real-time vintage stability |
+| Parameter | Default | Role |
+|----|----|----|
+| `knots` | `max(20, n/2)` | P-spline flexibility — higher = more local adaptability |
+| `mstop` | `500` | Boosting iterations — more = finer approximation |
+| `d` | `NULL (Auto)` | Huber delta — if `NULL`, auto-set via MAD of first differences (scale-invariant) |
+| `nu` | `0.2` | Shrinkage / learning rate — controls step size per iteration |
+| `boundary.knots` | `NULL` | B-spline domain anchor — if `NULL`, uses `range(time_idx)`; fix to `c(1, T_max)` for real-time vintage stability |
 
 By default, `d` is auto-calibrated using the MAD of the series’ first
 differences, making the filter scale-invariant and suitable for both
@@ -264,6 +283,7 @@ vintages and makes trends comparable across publication dates.
 ### Quick example
 
 ``` r
+
 set.seed(42)
 n <- 80
 t <- 1:n
@@ -296,7 +316,7 @@ mbh_res
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.126 s
+#>    Compute time : 0.124 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -318,12 +338,13 @@ list with three named elements:
 ### Printing
 
 ``` r
+
 mbh_res
 #> -- MacroFilter [MBH] --
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.126 s
+#>    Compute time : 0.124 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -332,6 +353,7 @@ parameters, the cycle range, and how long the filter took to run.
 ### Accessing components
 
 ``` r
+
 # Trend and cycle as plain vectors
 head(mbh_res$trend, 8)
 #> [1] 103.5415 103.7764 104.0074 104.2300 104.4373 104.6223 104.7785 104.9015
@@ -347,6 +369,7 @@ max(abs((mbh_res$trend + mbh_res$cycle) - mbh_res$data))  # should be < 1e-9
 ### Inspecting metadata
 
 ``` r
+
 str(mbh_res$meta)
 #> List of 10
 #>  $ method        : chr "MBH"
@@ -358,7 +381,7 @@ str(mbh_res$meta)
 #>  $ df            : int 4
 #>  $ select_mstop  : logi FALSE
 #>  $ boundary.knots: NULL
-#>  $ compute_time  : num 0.126
+#>  $ compute_time  : num 0.124
 ```
 
 The `meta` list stores every parameter used by the filter, making
@@ -368,6 +391,7 @@ arguments separately.
 ### Plotting cycles side by side
 
 ``` r
+
 df_cycle <- data.frame(
   t          = as.numeric(time(gdp)),
   HP_cycle   = as.numeric(hp_res$cycle),

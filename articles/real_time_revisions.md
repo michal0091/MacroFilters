@@ -4,28 +4,32 @@
 
 The Hodrick-Prescott filter solves the penalised least-squares problem
 
-$$\min\limits_{\tau}\sum\limits_{t = 1}^{T}\left( y_{t} - \tau_{t} \right)^{2} + \lambda\sum\limits_{t = 3}^{T}\left( \Delta^{2}\tau_{t} \right)^{2}$$
+``` math
+\min_{\tau} \sum_{t=1}^{T}(y_t - \tau_t)^2 + \lambda \sum_{t=3}^{T}(\Delta^2\tau_t)^2
+```
 
 which admits the closed-form solution
 
-$$\widehat{\tau} = (I + \lambda D\prime D)^{- 1}y$$
+``` math
+\hat{\tau} = (I + \lambda D'D)^{-1} y
+```
 
-where $D$ is the $(T - 2) \times T$ second-difference operator. The
-leverage matrix $(I + \lambda D\prime D)^{- 1}$ is symmetric and
-Toeplitz in the interior of the sample, but its boundary rows are
-fundamentally asymmetric: the observation at $t = T$ has **no right-hand
+where $`D`$ is the $`(T-2)\times T`$ second-difference operator. The
+leverage matrix $`(I + \lambda D'D)^{-1}`$ is symmetric and Toeplitz in
+the interior of the sample, but its boundary rows are fundamentally
+asymmetric: the observation at $`t = T`$ has **no right-hand
 neighbours** to anchor the penalty, so the smoother can shift to
 accommodate it almost freely.
 
 Concretely, the COVID-19 shock in 2020 Q2 represents a roughly
-$- 10\sigma$ residual relative to any pre-pandemic trend. Because the
+$`-10\sigma`$ residual relative to any pre-pandemic trend. Because the
 economy enters and exits the shock at the end of the available sample,
 the HP filter interprets the collapse as *trend information* and bends
 the estimated trend backward by several quarters — even with
-$\lambda = 1600$.
+$`\lambda = 1600`$.
 
 The **MacroBoost Hybrid (MBH) filter** guards against this via Huber
-loss: observations whose residuals exceed the threshold $d$ receive
+loss: observations whose residuals exceed the threshold $`d`$ receive
 down-weighted gradient contributions, so the COVID observation cannot
 dominate the objective.
 
@@ -64,6 +68,7 @@ a distinct failure mode:
     later vintages progressively more spectral flexibility.
 
 ``` r
+
 T_max    <- nrow(us_gdp_vintage)   # full-sample size (316 rows as of 2025)
 ref_date <- as.Date("2019-10-01")  # 2019 Q4 — last pre-COVID quarter
 ref_idx  <- which(us_gdp_vintage$date == ref_date)
@@ -142,12 +147,12 @@ backward_dt  <- rbindlist(Filter(Negate(is.null), back_list))
 
 ## 3 The Role of `boundary.knots`
 
-The MBH filter uses a B-spline basis $B(t)$ evaluated at the integer
-time index $t = 1,2,\ldots,n$. By default `bbs()` sets the knot domain
-to `range(time_idx) = c(1, n)`. As $n$ grows by one, the domain expands,
-the basis columns shift, and the estimated trend from vintage $k$ and
-vintage $k + 1$ are **not numerically comparable** — differences partly
-reflect a changed basis rather than new data.
+The MBH filter uses a B-spline basis $`B(t)`$ evaluated at the integer
+time index $`t = 1, 2, \ldots, n`$. By default `bbs()` sets the knot
+domain to `range(time_idx) = c(1, n)`. As $`n`$ grows by one, the domain
+expands, the basis columns shift, and the estimated trend from vintage
+$`k`$ and vintage $`k+1`$ are **not numerically comparable** —
+differences partly reflect a changed basis rather than new data.
 
 Passing `boundary.knots = fixed_bounds` (= `c(1, T_max)`) to every
 vintage call fixes the domain to the full-sample range. All vintages
@@ -156,6 +161,7 @@ consecutive trend estimates are attributable purely to the additional
 data point, not to basis drift.
 
 ``` r
+
 n_demo  <- 200L   # truncated sample
 y_demo  <- us_gdp_vintage$gdp_log[seq_len(n_demo)]
 
@@ -199,6 +205,7 @@ strongly as new data arrive — a sign of end-point instability. A **tight
 bundle** means the filter is stable in real time.
 
 ``` r
+
 # Show only the shared overlap window (2018 Q1 onward) where every one of
 # the 28 vintages contributes data — this eliminates the staircase / accordion
 # artefact that arises when staggered trailing windows are plotted together.
@@ -255,6 +262,7 @@ data is added. For MBH, the Huber loss caps the influence of the
 outlier, so earlier trend estimates barely move.
 
 ``` r
+
 # backward_dt was built in the expanding-window loop above.
 # MBH used df = 10 (correct endpoint estimate), knots = 50, and
 # boundary.knots = c(1, T_max) (frozen basis) — so all vintages are
@@ -313,6 +321,7 @@ the estimated pre-COVID trend downward, so the backward revision is
 substantially smaller than HP’s throughout the simulation window.
 
 ``` r
+
 knitr::kable(
   back_dt[, .(
     Vintage              = format(vintage_date),
@@ -325,34 +334,34 @@ knitr::kable(
 )
 ```
 
-| Vintage    | HP trend at 2019Q4 | MBH trend at 2019Q4 | HP revision (ppts) | MBH revision (ppts) |
-|:-----------|-------------------:|--------------------:|-------------------:|--------------------:|
-| 2019-10-01 |            9.94770 |             9.94816 |              0.000 |               0.000 |
-| 2020-01-01 |            9.94486 |             9.94496 |             -0.284 |              -0.320 |
-| 2020-04-01 |            9.92908 |             9.94174 |             -1.862 |              -0.642 |
-| 2020-07-01 |            9.92774 |             9.93857 |             -1.996 |              -0.959 |
-| 2020-10-01 |            9.92770 |             9.93505 |             -2.000 |              -1.311 |
-| 2021-01-01 |            9.92866 |             9.93480 |             -1.904 |              -1.335 |
-| 2021-04-01 |            9.93033 |             9.93645 |             -1.737 |              -1.171 |
-| 2021-07-01 |            9.93167 |             9.93787 |             -1.603 |              -1.029 |
-| 2021-10-01 |            9.93313 |             9.93931 |             -1.457 |              -0.885 |
-| 2022-01-01 |            9.93371 |             9.94005 |             -1.399 |              -0.811 |
-| 2022-04-01 |            9.93393 |             9.94023 |             -1.377 |              -0.793 |
-| 2022-07-01 |            9.93407 |             9.94038 |             -1.363 |              -0.777 |
-| 2022-10-01 |            9.93415 |             9.94049 |             -1.355 |              -0.767 |
+| Vintage | HP trend at 2019Q4 | MBH trend at 2019Q4 | HP revision (ppts) | MBH revision (ppts) |
+|:---|---:|---:|---:|---:|
+| 2019-10-01 | 9.94770 | 9.94816 | 0.000 | 0.000 |
+| 2020-01-01 | 9.94486 | 9.94496 | -0.284 | -0.320 |
+| 2020-04-01 | 9.92908 | 9.94174 | -1.862 | -0.642 |
+| 2020-07-01 | 9.92774 | 9.93857 | -1.996 | -0.959 |
+| 2020-10-01 | 9.92770 | 9.93505 | -2.000 | -1.311 |
+| 2021-01-01 | 9.92866 | 9.93480 | -1.904 | -1.335 |
+| 2021-04-01 | 9.93033 | 9.93645 | -1.737 | -1.171 |
+| 2021-07-01 | 9.93167 | 9.93787 | -1.603 | -1.029 |
+| 2021-10-01 | 9.93313 | 9.93931 | -1.457 | -0.885 |
+| 2022-01-01 | 9.93371 | 9.94005 | -1.399 | -0.811 |
+| 2022-04-01 | 9.93393 | 9.94023 | -1.377 | -0.793 |
+| 2022-07-01 | 9.93407 | 9.94038 | -1.363 | -0.777 |
+| 2022-10-01 | 9.93415 | 9.94049 | -1.355 | -0.767 |
 
-Backward revision of 2019 Q4 trend estimate across vintages
+Backward revision of 2019 Q4 trend estimate across vintages {.table}
 
 ------------------------------------------------------------------------
 
 ## Summary
 
-| Property                             | HP Filter                 | MBH Filter                 |
-|--------------------------------------|---------------------------|----------------------------|
-| End-point leverage                   | High (boundary asymmetry) | Low (Huber down-weighting) |
-| Backward revision of pre-COVID trend | Large (dips on shock)     | Near-zero                  |
-| COVID trend distortion               | Severe                    | Minimal                    |
-| Basis stability across vintages      | N/A                       | Requires `boundary.knots`  |
+| Property | HP Filter | MBH Filter |
+|----|----|----|
+| End-point leverage | High (boundary asymmetry) | Low (Huber down-weighting) |
+| Backward revision of pre-COVID trend | Large (dips on shock) | Near-zero |
+| COVID trend distortion | Severe | Minimal |
+| Basis stability across vintages | N/A | Requires `boundary.knots` |
 
 For real-time monitoring applications — nowcasting output gaps, setting
 automatic stabilisers, informing monetary policy decisions — the MBH
