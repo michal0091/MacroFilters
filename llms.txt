@@ -6,7 +6,7 @@
 > **Working Paper Available:** The econometric methodology and
 > mathematical proofs underlying this package are distributed via SSRN:
 > [Robust Real-Time Macroeconomic Trend Extraction: A Gradient Boosting
-> Approach](https://ssrn.com/abstract=6371138).
+> Approach](https://doi.org/10.2139/ssrn.6371138).
 
 **MacroFilters** is a unified, high-performance library for extracting
 trend and cycle components from macroeconomic time series. It combines
