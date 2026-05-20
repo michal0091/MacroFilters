@@ -2,7 +2,8 @@ Package: MacroFilters
 Title: Robust Trend-Cycle Decomposition for Macroeconomic Time Series
 Version: 0.1.0
 Authors@R: 
-    person("Michal", "Kinel", , "michal.kinel@gmail.com", role = c("aut", "cre"))
+    person("Michal", "Kinel", , "michal.kinel@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0007-3295-7199"))
 Description: Provides high-performance tools for macroeconomic trend
     extraction and filtering, specifically designed to solve the end-point
     problem in real-time. Implements the MacroBoost Hybrid (MBH) filter
