@@ -10,5 +10,6 @@ renv/library
 docs
 /doc/
 /Meta/
+paper/paper.log
 
 /.quarto/
