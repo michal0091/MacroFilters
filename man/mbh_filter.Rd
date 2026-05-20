@@ -140,9 +140,16 @@ observations. Keep \code{df = 4} (the default) for real-time applications.
 }
 
 \examples{
-# Quarterly GDP-like series
+# Fast example with reduced series and iterations
 set.seed(42)
-y <- ts(cumsum(rnorm(200)), start = c(2000, 1), frequency = 4)
-result <- mbh_filter(y)
+y <- ts(cumsum(rnorm(80)), start = c(2000, 1), frequency = 4)
+result <- mbh_filter(y, mstop = 100L)
 print(result)
+
+\donttest{
+# Full example with default parameters
+y2 <- ts(cumsum(rnorm(200)), start = c(2000, 1), frequency = 4)
+result2 <- mbh_filter(y2)
+print(result2)
+}
 }
