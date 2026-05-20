@@ -166,7 +166,7 @@ ham
 #>    Observations : 100
 #>    Parameters   : h = 8, p = 4
 #>    Cycle range  : [-13.41, 11.8]  sd = 7.212
-#>    Compute time : 0.000 s
+#>    Compute time : 0.001 s
 ```
 
 Note that the first $`h + p - 1`$ observations of the trend and cycle
@@ -316,7 +316,7 @@ mbh_res
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.129 s
+#>    Compute time : 0.130 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -344,7 +344,7 @@ mbh_res
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-26.64, 4.429]  sd = 4.087
-#>    Compute time : 0.129 s
+#>    Compute time : 0.130 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -381,7 +381,7 @@ str(mbh_res$meta)
 #>  $ df            : int 4
 #>  $ select_mstop  : logi FALSE
 #>  $ boundary.knots: NULL
-#>  $ compute_time  : num 0.129
+#>  $ compute_time  : num 0.13
 ```
 
 The `meta` list stores every parameter used by the filter, making

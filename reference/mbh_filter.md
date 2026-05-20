@@ -157,14 +157,26 @@ The defaults guard against all three:
 ## Examples
 
 ``` r
-# Quarterly GDP-like series
+# Fast example with reduced series and iterations
 set.seed(42)
-y <- ts(cumsum(rnorm(200)), start = c(2000, 1), frequency = 4)
-result <- mbh_filter(y)
+y <- ts(cumsum(rnorm(80)), start = c(2000, 1), frequency = 4)
+result <- mbh_filter(y, mstop = 100L)
 print(result)
 #> -- MacroFilter [MBH] --
+#>    Observations : 80
+#>    Parameters   : knots = 40, d = 0.9356, mstop = 100, mstop_initial = 100, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Cycle range  : [-2.445, 5.094]  sd = 1.643
+#>    Compute time : 0.035 s
+
+# \donttest{
+# Full example with default parameters
+y2 <- ts(cumsum(rnorm(200)), start = c(2000, 1), frequency = 4)
+result2 <- mbh_filter(y2)
+print(result2)
+#> -- MacroFilter [MBH] --
 #>    Observations : 200
-#>    Parameters   : knots = 100, d = 0.9445, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
-#>    Cycle range  : [-4.17, 5.05]  sd = 1.721
-#>    Compute time : 0.155 s
+#>    Parameters   : knots = 100, d = 0.9282, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Cycle range  : [-4.004, 3.762]  sd = 1.463
+#>    Compute time : 0.163 s
+# }
 ```

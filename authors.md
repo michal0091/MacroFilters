@@ -3,11 +3,12 @@
 ## Authors
 
 - **Michal Kinel**. Author, maintainer.
+  [](https://orcid.org/0009-0007-3295-7199)
 
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/michal0091/MacroFilters/blob/v0.1.0/inst/CITATION)
+[`inst/CITATION`](https://github.com/michal0091/MacroFilters/blob/main/inst/CITATION)
 
 Kinel M (2026). “Robust Real-Time Macroeconomic Trend Extraction: A
 Gradient Boosting Approach.”

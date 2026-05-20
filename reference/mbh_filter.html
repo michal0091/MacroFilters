@@ -39,7 +39,7 @@ them from distorting the trend."><meta property="og:image" content="https://mich
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>MacroBoost Hybrid (MBH) Filter</h1>
-      <small class="dont-index">Source: <a href="https://github.com/michal0091/MacroFilters/blob/v0.1.0/R/05_algo_mbh.R" class="external-link"><code>R/05_algo_mbh.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/michal0091/MacroFilters/blob/main/R/05_algo_mbh.R" class="external-link"><code>R/05_algo_mbh.R</code></a></small>
       <div class="d-none name"><code>mbh_filter.Rd</code></div>
     </div>
 
@@ -196,16 +196,28 @@ observations. Keep <code>df = 4</code> (the default) for real-time applications.
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Quarterly GDP-like series</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Fast example with reduced series and iterations</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/ts.html" class="external-link">ts</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">200</span><span class="op">)</span><span class="op">)</span>, start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2000</span>, <span class="fl">1</span><span class="op">)</span>, frequency <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">mbh_filter</span><span class="op">(</span><span class="va">y</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/ts.html" class="external-link">ts</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">80</span><span class="op">)</span><span class="op">)</span>, start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2000</span>, <span class="fl">1</span><span class="op">)</span>, frequency <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">mbh_filter</span><span class="op">(</span><span class="va">y</span>, mstop <span class="op">=</span> <span class="fl">100L</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> -- MacroFilter [MBH] --</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Observations : 80</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Parameters   : knots = 40, d = 0.9356, mstop = 100, mstop_initial = 100, nu = 0.1, df = 4, select_mstop = FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Cycle range  : [-2.445, 5.094]  sd = 1.643</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.035 s</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="co"># Full example with default parameters</span></span></span>
+<span class="r-in"><span><span class="va">y2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/ts.html" class="external-link">ts</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">200</span><span class="op">)</span><span class="op">)</span>, start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2000</span>, <span class="fl">1</span><span class="op">)</span>, frequency <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">result2</span> <span class="op">&lt;-</span> <span class="fu">mbh_filter</span><span class="op">(</span><span class="va">y2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result2</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -- MacroFilter [MBH] --</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Observations : 200</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Parameters   : knots = 100, d = 0.9445, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Cycle range  : [-4.17, 5.05]  sd = 1.721</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.155 s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Parameters   : knots = 100, d = 0.9282, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Cycle range  : [-4.004, 3.762]  sd = 1.463</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.163 s</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -64,7 +64,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Introduction to MacroFilters</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/michal0091/MacroFilters/blob/v0.1.0/vignettes/introduction.Rmd" class="external-link"><code>vignettes/introduction.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/michal0091/MacroFilters/blob/main/vignettes/introduction.Rmd" class="external-link"><code>vignettes/introduction.Rmd</code></a></small>
       <div class="d-none name"><code>introduction.Rmd</code></div>
     </div>
 
@@ -256,7 +256,7 @@ estimates by construction</p>
 <span><span class="co">#&gt;    Observations : 100</span></span>
 <span><span class="co">#&gt;    Parameters   : h = 8, p = 4</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-13.41, 11.8]  sd = 7.212</span></span>
-<span><span class="co">#&gt;    Compute time : 0.000 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.001 s</span></span></code></pre></div>
 <p>Note that the first
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mo>+</mo><mi>p</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">h + p - 1</annotation></semantics></math>
 observations of the trend and cycle are <code>NA</code>, because there
@@ -466,7 +466,7 @@ dates.</p>
 <span><span class="co">#&gt;    Observations : 80</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
-<span><span class="co">#&gt;    Compute time : 0.129 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.130 s</span></span></code></pre></div>
 <p><img src="introduction_files/figure-html/mbh-plot-1.png" class="r-plt" alt="" width="100%"></p>
 <hr>
 </div>
@@ -514,7 +514,7 @@ dates.</p>
 <span><span class="co">#&gt;    Observations : 80</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
-<span><span class="co">#&gt;    Compute time : 0.129 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.130 s</span></span></code></pre></div>
 <p>The <code>print</code> method shows the method, the number of
 observations, the key parameters, the cycle range, and how long the
 filter took to run.</p>
@@ -549,7 +549,7 @@ filter took to run.</p>
 <span><span class="co">#&gt;  $ df            : int 4</span></span>
 <span><span class="co">#&gt;  $ select_mstop  : logi FALSE</span></span>
 <span><span class="co">#&gt;  $ boundary.knots: NULL</span></span>
-<span><span class="co">#&gt;  $ compute_time  : num 0.129</span></span></code></pre></div>
+<span><span class="co">#&gt;  $ compute_time  : num 0.13</span></span></code></pre></div>
 <p>The <code>meta</code> list stores every parameter used by the filter,
 making results fully reproducible from the object alone — no need to
 track arguments separately.</p>
