@@ -72,7 +72,9 @@
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/michal0091/MacroFilters" class="external-link">MacroFilters</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"fr_gdp"</span>, package <span class="op">=</span> <span class="st">"MacroFilters"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"es_gdp"</span>, package <span class="op">=</span> <span class="st">"MacroFilters"</span><span class="op">)</span></span></code></pre></div>
 <hr>
 <div class="section level2">
 <h2 id="introduction-trend-cycle-decomposition">1. Introduction: Trend-Cycle Decomposition<a class="anchor" aria-label="anchor" href="#introduction-trend-cycle-decomposition"></a>
@@ -310,7 +312,7 @@ test</td>
 <span><span class="co">#&gt;    Observations : 100</span></span>
 <span><span class="co">#&gt;    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-5.487, 4.068]  sd = 1.857</span></span>
-<span><span class="co">#&gt;    Compute time : 0.001 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.004 s</span></span></code></pre></div>
 <p>Internally, <strong>MacroFilters</strong> precomputes the sparse
 penalty matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Q</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mi>I</mi><mo>+</mo><mi>λ</mi><msup><mi>D</mi><mo>′</mo></msup><mi>D</mi><msup><mo stretchy="false" form="postfix">)</mo><mrow><mi>−</mi><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">Q = (I + \lambda D'D)^{-1}</annotation></semantics></math>
@@ -433,39 +435,54 @@ dates.</p>
 <div class="section level3">
 <h3 id="quick-example">Quick example<a class="anchor" aria-label="anchor" href="#quick-example"></a>
 </h3>
+<p>France and Spain had two of the sharpest COVID-19 contractions in the
+EU (approximately −14 % and −18 % quarter-on-quarter in 2020 Q2
+respectively), both followed by a rapid V-shaped recovery — making them
+a demanding real-world stress test for any trend filter.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">80</span></span>
-<span><span class="va">t</span> <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">:</span><span class="va">n</span></span>
+<code class="sourceCode R"><span><span class="co"># FRED public endpoint — no API key needed.</span></span>
+<span><span class="co"># See data-raw/intl_gdp.R for the full reproducible download script.</span></span>
+<span><span class="va">read_fred</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">id</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">url</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"https://fred.stlouisfed.org/graph/fredgraph.csv?id=%s"</span>, <span class="va">id</span><span class="op">)</span></span>
+<span>  <span class="va">dt</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">url</span>, col.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"date"</span>, <span class="st">"gdp_real"</span><span class="op">)</span>, na.strings <span class="op">=</span> <span class="st">"."</span><span class="op">)</span></span>
+<span>  <span class="va">dt</span><span class="op">$</span><span class="va">date</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="va">dt</span><span class="op">$</span><span class="va">date</span><span class="op">)</span></span>
+<span>  <span class="va">dt</span><span class="op">$</span><span class="va">gdp_log</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">dt</span><span class="op">$</span><span class="va">gdp_real</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">dt</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">dt</span><span class="op">$</span><span class="va">gdp_real</span><span class="op">)</span>, <span class="op">]</span></span>
+<span><span class="op">}</span></span>
+<span><span class="va">fr_raw</span> <span class="op">&lt;-</span> <span class="fu">read_fred</span><span class="op">(</span><span class="st">"CLVMNACSCAB1GQFR"</span><span class="op">)</span></span>
+<span><span class="va">es_raw</span> <span class="op">&lt;-</span> <span class="fu">read_fred</span><span class="op">(</span><span class="st">"CLVMNACSCAB1GQES"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Apply HP + MBH per country.</span></span>
+<span><span class="co"># For log-level series, auto d (MAD of diff) is too tight — calibrate d on the</span></span>
+<span><span class="co"># cycle scale instead (see vignette "Hyperparameter Tuning for the MBH Filter").</span></span>
+<span><span class="va">make_trend_df</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">raw</span>, <span class="va">country</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">dt</span>  <span class="op">&lt;-</span> <span class="va">raw</span><span class="op">[</span><span class="va">raw</span><span class="op">$</span><span class="va">date</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2000-01-01"</span><span class="op">)</span>, <span class="op">]</span></span>
+<span>  <span class="va">g</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/ts.html" class="external-link">ts</a></span><span class="op">(</span><span class="va">dt</span><span class="op">$</span><span class="va">gdp_log</span>, start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2000</span>, <span class="fl">1</span><span class="op">)</span>, frequency <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
+<span>  <span class="va">hp</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hp_filter.html">hp_filter</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span></span>
+<span>  <span class="va">mbh</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/mbh_filter.html">mbh_filter</a></span><span class="op">(</span><span class="va">g</span>, d <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/mad.html" class="external-link">mad</a></span><span class="op">(</span><span class="va">hp</span><span class="op">$</span><span class="va">cycle</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>country  <span class="op">=</span> <span class="va">country</span>,</span>
+<span>             t        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/time.html" class="external-link">time</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>             observed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span>,</span>
+<span>             hp       <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">hp</span><span class="op">$</span><span class="va">trend</span><span class="op">)</span>,</span>
+<span>             mbh      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">mbh</span><span class="op">$</span><span class="va">trend</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
 <span></span>
-<span><span class="co"># 1. Define simulation parameters</span></span>
-<span><span class="va">sd_noise</span> <span class="op">&lt;-</span> <span class="fl">1.8</span></span>
-<span><span class="va">trend</span>    <span class="op">&lt;-</span> <span class="fl">100</span> <span class="op">+</span> <span class="fl">0.3</span> <span class="op">*</span> <span class="va">t</span> <span class="op">+</span> <span class="fl">0.005</span> <span class="op">*</span> <span class="va">t</span><span class="op">^</span><span class="fl">2</span></span>
-<span><span class="va">cycle</span>    <span class="op">&lt;-</span> <span class="fl">2.5</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="va">pi</span> <span class="op">*</span> <span class="va">t</span> <span class="op">/</span> <span class="fl">28</span><span class="op">)</span> <span class="co"># 7-year business cycle</span></span>
+<span><span class="va">df_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>
+<span>  <span class="fu">make_trend_df</span><span class="op">(</span><span class="va">fr_gdp</span>, <span class="st">"France"</span><span class="op">)</span>,</span>
+<span>  <span class="fu">make_trend_df</span><span class="op">(</span><span class="va">es_gdp</span>, <span class="st">"Spain"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Simulate GDP index</span></span>
-<span><span class="va">gdp_num</span> <span class="op">&lt;-</span> <span class="va">trend</span> <span class="op">+</span> <span class="va">cycle</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, sd <span class="op">=</span> <span class="va">sd_noise</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 3. Inject a structural shock (e.g., COVID-19 lockdown)</span></span>
-<span><span class="co"># Expressed as extreme standard deviation events</span></span>
-<span><span class="va">gdp_num</span><span class="op">[</span><span class="fl">60</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">gdp_num</span><span class="op">[</span><span class="fl">60</span><span class="op">]</span> <span class="op">-</span> <span class="op">(</span><span class="fl">16</span> <span class="op">*</span> <span class="va">sd_noise</span><span class="op">)</span> <span class="co"># Massive crash</span></span>
-<span><span class="va">gdp_num</span><span class="op">[</span><span class="fl">61</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">gdp_num</span><span class="op">[</span><span class="fl">61</span><span class="op">]</span> <span class="op">-</span> <span class="op">(</span><span class="fl">9</span> <span class="op">*</span> <span class="va">sd_noise</span><span class="op">)</span>  <span class="co"># Partial recovery</span></span>
-<span><span class="va">gdp_num</span><span class="op">[</span><span class="fl">62</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">gdp_num</span><span class="op">[</span><span class="fl">62</span><span class="op">]</span> <span class="op">-</span> <span class="op">(</span><span class="fl">4</span> <span class="op">*</span> <span class="va">sd_noise</span><span class="op">)</span>  <span class="co"># V Stabilization</span></span>
-<span><span class="va">gdp_num</span><span class="op">[</span><span class="fl">62</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">gdp_num</span><span class="op">[</span><span class="fl">62</span><span class="op">]</span> <span class="op">-</span> <span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="va">sd_noise</span><span class="op">)</span>  <span class="co"># Stabilization</span></span>
-<span></span>
-<span><span class="va">gdp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/ts.html" class="external-link">ts</a></span><span class="op">(</span><span class="va">gdp_num</span>, start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2001</span>, <span class="fl">1</span><span class="op">)</span>, frequency <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Extract trends</span></span>
+<span><span class="co"># Keep Spain filter objects for the S3 class examples in Section 5</span></span>
+<span><span class="va">dt_es</span>   <span class="op">&lt;-</span> <span class="va">es_gdp</span><span class="op">[</span><span class="va">es_gdp</span><span class="op">$</span><span class="va">date</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2000-01-01"</span><span class="op">)</span>, <span class="op">]</span></span>
+<span><span class="va">gdp</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/ts.html" class="external-link">ts</a></span><span class="op">(</span><span class="va">dt_es</span><span class="op">$</span><span class="va">gdp_log</span>, start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2000</span>, <span class="fl">1</span><span class="op">)</span>, frequency <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="va">hp_res</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hp_filter.html">hp_filter</a></span><span class="op">(</span><span class="va">gdp</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># MBH Filter: Auto-calibrated threshold (d) based on MAD of differences</span></span>
-<span><span class="va">mbh_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/mbh_filter.html">mbh_filter</a></span><span class="op">(</span><span class="va">gdp</span><span class="op">)</span> </span>
+<span><span class="va">mbh_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/mbh_filter.html">mbh_filter</a></span><span class="op">(</span><span class="va">gdp</span>, d <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/mad.html" class="external-link">mad</a></span><span class="op">(</span><span class="va">hp_res</span><span class="op">$</span><span class="va">cycle</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">mbh_res</span></span>
 <span><span class="co">#&gt; -- MacroFilter [MBH] --</span></span>
-<span><span class="co">#&gt;    Observations : 80</span></span>
-<span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
-<span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
+<span><span class="co">#&gt;    Observations : 105</span></span>
+<span><span class="co">#&gt;    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
+<span><span class="co">#&gt;    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963</span></span>
 <span><span class="co">#&gt;    Compute time : 0.095 s</span></span></code></pre></div>
 <p><img src="introduction_files/figure-html/mbh-plot-1.png" class="r-plt" alt="" width="100%"></p>
 <hr>
@@ -508,12 +525,12 @@ dates.</p>
 <div class="section level3">
 <h3 id="printing">Printing<a class="anchor" aria-label="anchor" href="#printing"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mbh_res</span></span>
 <span><span class="co">#&gt; -- MacroFilter [MBH] --</span></span>
-<span><span class="co">#&gt;    Observations : 80</span></span>
-<span><span class="co">#&gt;    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
-<span><span class="co">#&gt;    Cycle range  : [-26.64, 4.429]  sd = 4.087</span></span>
+<span><span class="co">#&gt;    Observations : 105</span></span>
+<span><span class="co">#&gt;    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
+<span><span class="co">#&gt;    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963</span></span>
 <span><span class="co">#&gt;    Compute time : 0.095 s</span></span></code></pre></div>
 <p>The <code>print</code> method shows the method, the number of
 observations, the key parameters, the cycle range, and how long the
@@ -522,13 +539,13 @@ filter took to run.</p>
 <div class="section level3">
 <h3 id="accessing-components">Accessing components<a class="anchor" aria-label="anchor" href="#accessing-components"></a>
 </h3>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Trend and cycle as plain vectors</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">mbh_res</span><span class="op">$</span><span class="va">trend</span>, <span class="fl">8</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 103.5415 103.7764 104.0074 104.2300 104.4373 104.6223 104.7785 104.9015</span></span>
+<span><span class="co">#&gt; [1] 12.28386 12.29250 12.30114 12.30977 12.31839 12.32701 12.33562 12.34422</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">mbh_res</span><span class="op">$</span><span class="va">cycle</span>, <span class="fl">8</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] -0.21246933 -3.08814252 -0.85000087  0.14375249  0.16777488 -0.39598786</span></span>
-<span><span class="co">#&gt; [7]  2.78720646  0.08539543</span></span>
+<span><span class="co">#&gt; [1] -0.002260454  0.001660910  0.003172859  0.005189628  0.006669714</span></span>
+<span><span class="co">#&gt; [6]  0.005797033  0.006754803  0.004490809</span></span>
 <span></span>
 <span><span class="co"># Verify the fundamental identity: trend + cycle == data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="op">(</span><span class="va">mbh_res</span><span class="op">$</span><span class="va">trend</span> <span class="op">+</span> <span class="va">mbh_res</span><span class="op">$</span><span class="va">cycle</span><span class="op">)</span> <span class="op">-</span> <span class="va">mbh_res</span><span class="op">$</span><span class="va">data</span><span class="op">)</span><span class="op">)</span>  <span class="co"># should be &lt; 1e-9</span></span>
@@ -537,12 +554,12 @@ filter took to run.</p>
 <div class="section level3">
 <h3 id="inspecting-metadata">Inspecting metadata<a class="anchor" aria-label="anchor" href="#inspecting-metadata"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">mbh_res</span><span class="op">$</span><span class="va">meta</span><span class="op">)</span></span>
 <span><span class="co">#&gt; List of 10</span></span>
 <span><span class="co">#&gt;  $ method        : chr "MBH"</span></span>
-<span><span class="co">#&gt;  $ knots         : int 40</span></span>
-<span><span class="co">#&gt;  $ d             : num 2.79</span></span>
+<span><span class="co">#&gt;  $ knots         : int 52</span></span>
+<span><span class="co">#&gt;  $ d             : num 0.0146</span></span>
 <span><span class="co">#&gt;  $ mstop         : int 500</span></span>
 <span><span class="co">#&gt;  $ mstop_initial : int 500</span></span>
 <span><span class="co">#&gt;  $ nu            : num 0.1</span></span>
@@ -557,7 +574,7 @@ track arguments separately.</p>
 <div class="section level3">
 <h3 id="plotting-cycles-side-by-side">Plotting cycles side by side<a class="anchor" aria-label="anchor" href="#plotting-cycles-side-by-side"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_cycle</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  t          <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/time.html" class="external-link">time</a></span><span class="op">(</span><span class="va">gdp</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  HP_cycle   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">hp_res</span><span class="op">$</span><span class="va">cycle</span><span class="op">)</span>,</span>

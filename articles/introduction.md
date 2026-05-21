@@ -4,6 +4,8 @@
 
 library(MacroFilters)
 library(ggplot2)
+data("fr_gdp", package = "MacroFilters")
+data("es_gdp", package = "MacroFilters")
 ```
 
 ------------------------------------------------------------------------
@@ -202,7 +204,7 @@ bhp
 #>    Observations : 100
 #>    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic
 #>    Cycle range  : [-5.487, 4.068]  sd = 1.857
-#>    Compute time : 0.001 s
+#>    Compute time : 0.004 s
 ```
 
 Internally, **MacroFilters** precomputes the sparse penalty matrix
@@ -282,40 +284,59 @@ vintages and makes trends comparable across publication dates.
 
 ### Quick example
 
+France and Spain had two of the sharpest COVID-19 contractions in the EU
+(approximately −14 % and −18 % quarter-on-quarter in 2020 Q2
+respectively), both followed by a rapid V-shaped recovery — making them
+a demanding real-world stress test for any trend filter.
+
 ``` r
 
-set.seed(42)
-n <- 80
-t <- 1:n
+# FRED public endpoint — no API key needed.
+# See data-raw/intl_gdp.R for the full reproducible download script.
+read_fred <- function(id) {
+  url <- sprintf("https://fred.stlouisfed.org/graph/fredgraph.csv?id=%s", id)
+  dt  <- read.csv(url, col.names = c("date", "gdp_real"), na.strings = ".")
+  dt$date    <- as.Date(dt$date)
+  dt$gdp_log <- log(as.numeric(dt$gdp_real))
+  dt[!is.na(dt$gdp_real), ]
+}
+fr_raw <- read_fred("CLVMNACSCAB1GQFR")
+es_raw <- read_fred("CLVMNACSCAB1GQES")
+```
 
-# 1. Define simulation parameters
-sd_noise <- 1.8
-trend    <- 100 + 0.3 * t + 0.005 * t^2
-cycle    <- 2.5 * sin(2 * pi * t / 28) # 7-year business cycle
+``` r
 
-# 2. Simulate GDP index
-gdp_num <- trend + cycle + rnorm(n, sd = sd_noise)
+# Apply HP + MBH per country.
+# For log-level series, auto d (MAD of diff) is too tight — calibrate d on the
+# cycle scale instead (see vignette "Hyperparameter Tuning for the MBH Filter").
+make_trend_df <- function(raw, country) {
+  dt  <- raw[raw$date >= as.Date("2000-01-01"), ]
+  g   <- ts(dt$gdp_log, start = c(2000, 1), frequency = 4)
+  hp  <- hp_filter(g)
+  mbh <- mbh_filter(g, d = mad(hp$cycle))
+  data.frame(country  = country,
+             t        = as.numeric(time(g)),
+             observed = as.numeric(g),
+             hp       = as.numeric(hp$trend),
+             mbh      = as.numeric(mbh$trend))
+}
 
-# 3. Inject a structural shock (e.g., COVID-19 lockdown)
-# Expressed as extreme standard deviation events
-gdp_num[60] <- gdp_num[60] - (16 * sd_noise) # Massive crash
-gdp_num[61] <- gdp_num[61] - (9 * sd_noise)  # Partial recovery
-gdp_num[62] <- gdp_num[62] - (4 * sd_noise)  # V Stabilization
-gdp_num[62] <- gdp_num[62] - (2 * sd_noise)  # Stabilization
+df_plot <- rbind(
+  make_trend_df(fr_gdp, "France"),
+  make_trend_df(es_gdp, "Spain")
+)
 
-gdp <- ts(gdp_num, start = c(2001, 1), frequency = 4)
-
-# Extract trends
+# Keep Spain filter objects for the S3 class examples in Section 5
+dt_es   <- es_gdp[es_gdp$date >= as.Date("2000-01-01"), ]
+gdp     <- ts(dt_es$gdp_log, start = c(2000, 1), frequency = 4)
 hp_res  <- hp_filter(gdp)
-
-# MBH Filter: Auto-calibrated threshold (d) based on MAD of differences
-mbh_res <- mbh_filter(gdp) 
+mbh_res <- mbh_filter(gdp, d = mad(hp_res$cycle))
 
 mbh_res
 #> -- MacroFilter [MBH] --
-#>    Observations : 80
-#>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
-#>    Cycle range  : [-26.64, 4.429]  sd = 4.087
+#>    Observations : 105
+#>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
 #>    Compute time : 0.095 s
 ```
 
@@ -341,9 +362,9 @@ list with three named elements:
 
 mbh_res
 #> -- MacroFilter [MBH] --
-#>    Observations : 80
-#>    Parameters   : knots = 40, d = 2.789, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
-#>    Cycle range  : [-26.64, 4.429]  sd = 4.087
+#>    Observations : 105
+#>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
 #>    Compute time : 0.095 s
 ```
 
@@ -356,10 +377,10 @@ parameters, the cycle range, and how long the filter took to run.
 
 # Trend and cycle as plain vectors
 head(mbh_res$trend, 8)
-#> [1] 103.5415 103.7764 104.0074 104.2300 104.4373 104.6223 104.7785 104.9015
+#> [1] 12.28386 12.29250 12.30114 12.30977 12.31839 12.32701 12.33562 12.34422
 head(mbh_res$cycle, 8)
-#> [1] -0.21246933 -3.08814252 -0.85000087  0.14375249  0.16777488 -0.39598786
-#> [7]  2.78720646  0.08539543
+#> [1] -0.002260454  0.001660910  0.003172859  0.005189628  0.006669714
+#> [6]  0.005797033  0.006754803  0.004490809
 
 # Verify the fundamental identity: trend + cycle == data
 max(abs((mbh_res$trend + mbh_res$cycle) - mbh_res$data))  # should be < 1e-9
@@ -373,8 +394,8 @@ max(abs((mbh_res$trend + mbh_res$cycle) - mbh_res$data))  # should be < 1e-9
 str(mbh_res$meta)
 #> List of 10
 #>  $ method        : chr "MBH"
-#>  $ knots         : int 40
-#>  $ d             : num 2.79
+#>  $ knots         : int 52
+#>  $ d             : num 0.0146
 #>  $ mstop         : int 500
 #>  $ mstop_initial : int 500
 #>  $ nu            : num 0.1

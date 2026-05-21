@@ -4,6 +4,10 @@
 
 - [`bhp_filter()`](https://michal0091.github.io/MacroFilters/reference/bhp_filter.md)
   : Boosted HP Filter
+- [`es_gdp`](https://michal0091.github.io/MacroFilters/reference/es_gdp.md)
+  : Spain Real GDP — FRED Vintage
+- [`fr_gdp`](https://michal0091.github.io/MacroFilters/reference/fr_gdp.md)
+  : France Real GDP — FRED Vintage
 - [`hamilton_filter()`](https://michal0091.github.io/MacroFilters/reference/hamilton_filter.md)
   : Hamilton Filter
 - [`hp_filter()`](https://michal0091.github.io/MacroFilters/reference/hp_filter.md)
