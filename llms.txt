@@ -1,8 +1,5 @@
 # MacroFilters
 
-[](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[](https://github.com/michal0091/MacroFilters/actions/workflows/R-CMD-check.yaml)
-
 > **Working Paper Available:** The econometric methodology and
 > mathematical proofs underlying this package are distributed via SSRN:
 > [Robust Real-Time Macroeconomic Trend Extraction: A Gradient Boosting
