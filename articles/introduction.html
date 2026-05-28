@@ -209,7 +209,7 @@ and memory.</p>
 <span><span class="co">#&gt;    Observations : 100</span></span>
 <span><span class="co">#&gt;    Parameters   : lambda = 1600</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-7.738, 9.143]  sd = 3.897</span></span>
-<span><span class="co">#&gt;    Compute time : 0.003 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.002 s</span></span></code></pre></div>
 <p>The smoothing parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>
 is auto-selected from the series frequency via the Ravn-Uhlig (2002)
@@ -258,7 +258,7 @@ estimates by construction</p>
 <span><span class="co">#&gt;    Observations : 100</span></span>
 <span><span class="co">#&gt;    Parameters   : h = 8, p = 4</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-13.41, 11.8]  sd = 7.212</span></span>
-<span><span class="co">#&gt;    Compute time : 0.000 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.001 s</span></span></code></pre></div>
 <p>Note that the first
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mo>+</mo><mi>p</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">h + p - 1</annotation></semantics></math>
 observations of the trend and cycle are <code>NA</code>, because there
@@ -312,7 +312,7 @@ test</td>
 <span><span class="co">#&gt;    Observations : 100</span></span>
 <span><span class="co">#&gt;    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-5.487, 4.068]  sd = 1.857</span></span>
-<span><span class="co">#&gt;    Compute time : 0.004 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.003 s</span></span></code></pre></div>
 <p>Internally, <strong>MacroFilters</strong> precomputes the sparse
 penalty matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Q</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mi>I</mi><mo>+</mo><mi>λ</mi><msup><mi>D</mi><mo>′</mo></msup><mi>D</mi><msup><mo stretchy="false" form="postfix">)</mo><mrow><mi>−</mi><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">Q = (I + \lambda D'D)^{-1}</annotation></semantics></math>
@@ -483,7 +483,7 @@ a demanding real-world stress test for any trend filter.</p>
 <span><span class="co">#&gt;    Observations : 105</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963</span></span>
-<span><span class="co">#&gt;    Compute time : 0.098 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.097 s</span></span></code></pre></div>
 <p><img src="introduction_files/figure-html/mbh-plot-1.png" class="r-plt" alt="" width="100%"></p>
 <hr>
 </div>
@@ -531,7 +531,7 @@ a demanding real-world stress test for any trend filter.</p>
 <span><span class="co">#&gt;    Observations : 105</span></span>
 <span><span class="co">#&gt;    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span></span>
 <span><span class="co">#&gt;    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963</span></span>
-<span><span class="co">#&gt;    Compute time : 0.098 s</span></span></code></pre></div>
+<span><span class="co">#&gt;    Compute time : 0.097 s</span></span></code></pre></div>
 <p>The <code>print</code> method shows the method, the number of
 observations, the key parameters, the cycle range, and how long the
 filter took to run.</p>
@@ -566,7 +566,7 @@ filter took to run.</p>
 <span><span class="co">#&gt;  $ df            : int 4</span></span>
 <span><span class="co">#&gt;  $ select_mstop  : logi FALSE</span></span>
 <span><span class="co">#&gt;  $ boundary.knots: NULL</span></span>
-<span><span class="co">#&gt;  $ compute_time  : num 0.098</span></span></code></pre></div>
+<span><span class="co">#&gt;  $ compute_time  : num 0.097</span></span></code></pre></div>
 <p>The <code>meta</code> list stores every parameter used by the filter,
 making results fully reproducible from the object alone — no need to
 track arguments separately.</p>
