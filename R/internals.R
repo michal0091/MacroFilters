@@ -1,37 +1,55 @@
 # ── Internal utilities (not exported) ─────────────────────────────────────────
 
-#' Fast HP cycle for internal calibration
+#' Build the pre-factorized Cholesky of the HP system matrix
 #'
-#' Solves (I + lambda * D'D) t = y via sparse Cholesky and returns only the
-#' cycle (y - trend). No input validation, no class wrapping, no timing.
-#' `stats::frequency(x)` drives the Ravn-Uhlig lambda so the threshold is
-#' always on the correct residual scale.
+#' Constructs the second-difference matrix `D` and factorizes the HP system
+#' `Q = I + lambda * D'D` once, so the (expensive) factorization can be reused
+#' across every bootstrap replicate and every bHP inner iteration instead of
+#' being recomputed on each [Matrix::solve()] call.
 #'
-#' @param x Numeric vector or `ts` object.
-#' @param lambda Optional smoothing parameter. If `NULL` (default) it is
-#'   derived from `stats::frequency(x)` via the Ravn-Uhlig rule. Supply an
-#'   explicit value to override frequency detection (e.g. a plain numeric
-#'   vector that is really monthly data).
-#' @return Numeric vector of cyclical residuals, same length as `x`.
+#' @param n Integer length of the series (must be >= 3).
+#' @param lambda Numeric smoothing parameter.
+#' @return A sparse Cholesky factor (from [Matrix::Cholesky()]).
 #' @keywords internal
 #' @noRd
-.hp_fast <- function(x, lambda = NULL) {
-  n <- length(x)
-  if (n < 3L) return(rep(0, n))          # bandSparse needs n-2 >= 1 rows
-
-  if (is.null(lambda)) {
-    freq   <- stats::frequency(x)        # 1 for numeric/annual, 4/12 for ts
-    lambda <- 6.25 * freq^4              # Ravn-Uhlig rule
-  }
-  y <- as.double(x)
-
+.build_hp_cholesky <- function(n, lambda) {
   D <- Matrix::bandSparse(
     n - 2L, n,
     k         = c(0L, 1L, 2L),
     diagonals = list(rep(1, n - 2L), rep(-2, n - 2L), rep(1, n - 2L))
   )
   Q <- Matrix::Diagonal(n) + lambda * Matrix::crossprod(D)
-  y - as.numeric(Matrix::solve(Q, y))
+  Matrix::Cholesky(Matrix::forceSymmetric(Q))
+}
+
+#' Fast HP cycle for internal calibration and bootstrap
+#'
+#' Returns only the cycle (`y - trend`) of the HP filter. No input validation,
+#' no class wrapping, no timing. Pass a pre-built Cholesky factor `CH` to skip
+#' the per-call factorization (the hot path inside `.boot_engine`); otherwise
+#' the factor is built from `lambda`, which itself falls back to the
+#' Ravn-Uhlig rule via `stats::frequency(x)`.
+#'
+#' @param x Numeric vector or `ts` object.
+#' @param lambda Optional smoothing parameter (used only when `CH` is `NULL`).
+#' @param CH Optional pre-built Cholesky factor from `.build_hp_cholesky()`.
+#' @return Numeric vector of cyclical residuals, same length as `x`.
+#' @keywords internal
+#' @noRd
+.hp_fast <- function(x, lambda = NULL, CH = NULL) {
+  n <- length(x)
+  if (n < 3L) return(rep(0, n))          # bandSparse needs n-2 >= 1 rows
+  y <- as.double(x)
+
+  if (is.null(CH)) {
+    if (is.null(lambda)) {
+      freq   <- stats::frequency(x)      # 1 for numeric/annual, 4/12 for ts
+      lambda <- 6.25 * freq^4            # Ravn-Uhlig rule
+    }
+    CH <- .build_hp_cholesky(n, lambda)
+  }
+
+  y - as.numeric(Matrix::solve(CH, y))
 }
 
 
@@ -70,28 +88,21 @@
 #' cycle. Conditioning on a fixed `iter` is what makes the bootstrap refit use
 #' the *same estimator* as the base fit.
 #'
-#' @param y Numeric vector.
-#' @param lambda HP smoothing parameter.
+#' @param y Numeric vector (bootstrap draw).
+#' @param CH Pre-built Cholesky factor from `.build_hp_cholesky()`.
 #' @param iter Integer number of boosting passes (the base fit's final count).
 #' @return Numeric cycle vector, same length as `y`.
 #' @keywords internal
 #' @noRd
-.bhp_fast <- function(y, lambda, iter) {
-  n <- length(y)
-  if (n < 3L) return(rep(0, n))
-
-  D <- Matrix::bandSparse(
-    n - 2L, n,
-    k         = c(0L, 1L, 2L),
-    diagonals = list(rep(1, n - 2L), rep(-2, n - 2L), rep(1, n - 2L))
-  )
-  Q <- Matrix::Diagonal(n) + lambda * Matrix::crossprod(D)
-
-  u <- y
+.bhp_fast <- function(y, CH, iter) {
+  # Boosted HP re-smooths the RESIDUAL each pass: the cycle of the cycle.
+  # Iterating `.hp_fast` (which returns the cycle) reproduces the base loop's
+  # `u <- u - HP_trend(u)` exactly, while reusing the cached factor CH.
+  res <- as.double(y)
   for (i in seq_len(iter)) {
-    u <- u - as.numeric(Matrix::solve(Q, u))   # peel off each trend increment
+    res <- .hp_fast(res, CH = CH)
   }
-  u                                            # cycle = y - accumulated trend
+  res                                          # final cycle after `iter` passes
 }
 
 
