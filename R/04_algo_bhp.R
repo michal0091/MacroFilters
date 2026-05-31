@@ -113,6 +113,10 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   )
   Q <- Matrix::Diagonal(n) + lambda * Matrix::crossprod(D)
 
+  # Factorize once: reused by every base iteration AND every bootstrap
+  # replicate. Q itself is retained only for the BIC eigendecomposition below.
+  CH <- Matrix::Cholesky(Matrix::forceSymmetric(Q))
+
   # 6. BIC precomputation (eigenvalues of Q) ---------------------------------
   if (stopping == "bic") {
     if (n > 5000L) {
@@ -132,7 +136,7 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
 
   # 8. Boosting loop ---------------------------------------------------------
   # Iteration 1
-  res <- .hp_solve(y, Q)
+  res <- .hp_solve(y, CH)
   f_hat <- res$trend
   u     <- res$cycle
 
@@ -150,7 +154,7 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   # Iterations 2..iter_max
   if (iter_max > 1L) {
     for (k in 2L:iter_max) {
-      res_k <- .hp_solve(u, Q)
+      res_k <- .hp_solve(u, CH)
       f_hat <- f_hat + res_k$trend
       u     <- res_k$cycle
 
@@ -204,7 +208,8 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   ci_bands <- NULL
   if (boot_iter > 0L) {
     bs <- .resolve_block_size(x, block_size, n)
-    ff <- function(y_b) y_b - .bhp_fast(y_b, lambda, final_iter)
+    # Reuse the factor CH built for the base fit (no rebuild).
+    ff <- function(y_b) y_b - .bhp_fast(y_b, CH = CH, iter = final_iter)
     ci_bands <- .boot_engine(
       filter_func = ff,
       trend_base  = final_trend,
@@ -241,10 +246,12 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
 }
 
 # ── Internal helper ─────────────────────────────────────────────────────────
-#' Apply one HP smoothing pass given a precomputed system matrix
+#' Apply one HP smoothing pass given a precomputed system factor
 #'
 #' @param y Numeric vector to smooth.
-#' @param Q Precomputed sparse system matrix (I + lambda * D'D).
+#' @param Q Precomputed HP system: either the sparse matrix `I + lambda * D'D`
+#'   or its Cholesky factor from [Matrix::Cholesky()]; both dispatch through
+#'   [Matrix::solve()].
 #' @return A list with `trend` and `cycle` numeric vectors.
 #' @noRd
 #' @keywords internal
