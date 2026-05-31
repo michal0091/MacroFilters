@@ -219,7 +219,7 @@
   # Step 6: Apply filter; per time point, get the bootstrap standard deviation
   DT[, boot_trend := filter_func(y_boot), by = iter]
 
-  s_DT <- DT[, .(s = stats::sd(boot_trend)), by = time_idx]
+  s_DT <- DT[, list(s = stats::sd(boot_trend)), by = time_idx]
   data.table::setorder(s_DT, time_idx)
 
   # Step 7: Normal-approximation band centred on the point estimate.
