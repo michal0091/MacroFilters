@@ -162,7 +162,9 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
       }
 
       if (stopping == "adf") {
-        adf_p <- tseries::adf.test(u)$p.value
+        # adf.test() warns when the statistic falls outside its p-value table
+        # (very stationary residual, p < 0.01); we only use the numeric value.
+        adf_p <- suppressWarnings(tseries::adf.test(u)$p.value)
         if (adf_p < sig_level) {
           final_iter  <- k
           final_trend <- f_hat
