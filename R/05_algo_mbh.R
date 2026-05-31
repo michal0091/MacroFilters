@@ -28,8 +28,12 @@
 #' @param boot_iter Non-negative integer.
 #'   Number of block-bootstrap iterations for uncertainty quantification
 #'   (default `0`, bootstrap disabled). When `> 0`, the function adds
-#'   `$trend_lower` and `$trend_upper` (2.5%--97.5% quantile bands) to the
-#'   returned object. See also `block_size`.
+#'   `$trend_lower` and `$trend_upper`: a 95% normal-approximation band,
+#'   `trend +/- 1.96 * sd(bootstrap trends)`, centred on the estimated trend.
+#'   The bootstrap sd is used instead of empirical percentiles because it is
+#'   smooth and stable at practical `boot_iter`. Each bootstrap refit uses the
+#'   same `mstop` as the base fit, so larger `boot_iter` raises cost linearly.
+#'   See also `block_size`.
 #' @param block_size Positive integer or `"auto"`.
 #'   Block length for the moving-block bootstrap (used only when
 #'   `boot_iter > 0`). If `"auto"` (default), it is set to
@@ -125,13 +129,13 @@
 #'     \item{`$data`}{Original input as numeric.}
 #'     \item{`$meta`}{Named list: `method`, `knots`, `d`, `mstop`, `nu`,
 #'       `df`, `select_mstop`, `compute_time`.}
-#'     \item{`$trend_lower`, `$trend_upper`}{2.5% and 97.5% bootstrap quantile
-#'       bands. Present only when `boot_iter > 0`.}
+#'     \item{`$trend_lower`, `$trend_upper`}{95% normal-approximation bootstrap
+#'       band (`trend +/- 1.96 * sd`). Present only when `boot_iter > 0`.}
 #'   }
 #'
 #' @export
 #' @importFrom mboost mboost bbs bols Huber boost_control mstop
-#' @importFrom stats fitted AIC frequency mad quantile
+#' @importFrom stats fitted AIC frequency mad sd qnorm
 #' @importFrom data.table data.table setorder
 #'
 #' @examples
@@ -241,7 +245,9 @@ mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
     } else {
       max(1L, min(as.integer(block_size), floor(n / 3L)))
     }
-    mstop_boot <- max(50L, mstop_final %/% 5L)
+    # Bootstrap refits MUST use the same estimator (identical mstop) as the
+    # base fit, or the band width is biased. boot_iter is the speed dial.
+    mstop_boot <- mstop_final
     ff <- function(y_b) {
       .mbh_fast_trend(y_b, d_val, knots, mstop_boot, nu, df, boundary.knots)
     }
