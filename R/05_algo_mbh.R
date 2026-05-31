@@ -240,11 +240,7 @@ mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
   # 9. Optional block bootstrap -----------------------------------------------
   ci_bands <- NULL
   if (boot_iter > 0L) {
-    bs <- if (identical(block_size, "auto")) {
-      max(1L, min(2L * as.integer(stats::frequency(x)), floor(n / 3L)))
-    } else {
-      max(1L, min(as.integer(block_size), floor(n / 3L)))
-    }
+    bs <- .resolve_block_size(x, block_size, n)
     # Bootstrap refits MUST use the same estimator (identical mstop) as the
     # base fit, or the band width is biased. boot_iter is the speed dial.
     mstop_boot <- mstop_final
