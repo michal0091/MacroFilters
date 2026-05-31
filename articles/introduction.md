@@ -204,7 +204,7 @@ bhp
 #>    Observations : 100
 #>    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic
 #>    Cycle range  : [-5.487, 4.068]  sd = 1.857
-#>    Compute time : 0.002 s
+#>    Compute time : 0.003 s
 ```
 
 Internally, **MacroFilters** precomputes the sparse penalty matrix
@@ -337,7 +337,7 @@ mbh_res
 #>    Observations : 105
 #>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
-#>    Compute time : 0.115 s
+#>    Compute time : 0.100 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -374,7 +374,7 @@ mbh_res
 #>    Observations : 105
 #>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
-#>    Compute time : 0.115 s
+#>    Compute time : 0.100 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -411,7 +411,7 @@ str(mbh_res$meta)
 #>  $ df            : int 4
 #>  $ select_mstop  : logi FALSE
 #>  $ boundary.knots: NULL
-#>  $ compute_time  : num 0.115
+#>  $ compute_time  : num 0.1
 #>  $ ts_class      : chr "ts"
 #>  $ tsp           : num [1:3] 2000 2026 4
 #>  $ idx           : NULL

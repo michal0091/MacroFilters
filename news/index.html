@@ -40,27 +40,24 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="macrofilters-020">MacroFilters 0.2.0<a class="anchor" aria-label="anchor" href="#macrofilters-020"></a></h2>
-</div>
-    <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.0.9000" id="macrofilters-0109000-development-version">MacroFilters 0.1.0.9000 (development version)<a class="anchor" aria-label="anchor" href="#macrofilters-0109000-development-version"></a></h2>
 <div class="section level3">
-<h3 id="new-features-0-1-0-9000">New features<a class="anchor" aria-label="anchor" href="#new-features-0-1-0-9000"></a></h3>
+<h3 id="new-features-0-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
 <ul><li>Confidence bands via block bootstrap for <strong>all four filters</strong> (<code><a href="../reference/hp_filter.html">hp_filter()</a></code>, <code><a href="../reference/hamilton_filter.html">hamilton_filter()</a></code>, <code><a href="../reference/bhp_filter.html">bhp_filter()</a></code>, <code><a href="../reference/mbh_filter.html">mbh_filter()</a></code>). The new <code>boot_iter</code> and <code>block_size</code> arguments add <code>$trend_lower</code> / <code>$trend_upper</code> to the result: a 95% normal-approximation band (<code>trend ± 1.96 * sd</code>) built from a Circular Block Bootstrap of the cycle, with each replicate refit by the same estimator as the base fit.</li>
 <li>New <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> method for <code>macrofilter</code> objects (ggplot2): draws the observed series, the estimated trend, and the confidence ribbon when present, with the time axis reconstructed from the stored temporal identity.</li>
 <li>
 <code><a href="../reference/mbh_filter.html">mbh_filter()</a></code> gains <code>hp_lambda</code> to control the HP-based auto-calibration of the Huber threshold <code>d</code> when the input is a plain numeric vector whose true frequency is not annual.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="performance-0-1-0-9000">Performance<a class="anchor" aria-label="anchor" href="#performance-0-1-0-9000"></a></h3>
+<h3 id="performance-0-2-0">Performance<a class="anchor" aria-label="anchor" href="#performance-0-2-0"></a></h3>
 <ul><li>The HP system matrix is now Cholesky-factorized <strong>once</strong> and reused across every bootstrap replicate (and every bHP inner iteration), instead of being re-factorized on each solve. This markedly speeds up <code><a href="../reference/hp_filter.html">hp_filter()</a></code> and <code><a href="../reference/bhp_filter.html">bhp_filter()</a></code> with <code>boot_iter &gt; 0</code> (and the base bHP fit), with bit-identical results.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="other-changes-0-1-0-9000">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-1-0-9000"></a></h3>
+<h3 id="other-changes-0-2-0">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-2-0"></a></h3>
 <ul><li>The <code>d = "auto"</code> calibration in <code><a href="../reference/mbh_filter.html">mbh_filter()</a></code> now uses the MAD of the HP cyclical residual (output-gap scale) instead of <code>mad(diff(y))</code>, and reports the chosen value via a <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code>.</li>
 <li>Filters now return a list of class <code>c("macrofilter", "list")</code> and store the temporal identity (<code>meta$ts_class</code>, <code>meta$tsp</code>, <code>meta$idx</code>) so trend, cycle and bands can all be mapped back to dates for plotting.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="documentation-0-1-0-9000">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-1-0-9000"></a></h3>
+<h3 id="documentation-0-2-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-2-0"></a></h3>
 <ul><li>New vignette <em>Uncertainty Bands via Block Bootstrap</em> covering <code>boot_iter</code>, <code>block_size</code>, the end-point fan and the Hamilton conditional band.</li>
 <li>
 <code><a href="../reference/mbh_filter.html">mbh_filter()</a></code> documents the <code>mstop</code>–<code>d</code> interaction (reducing <code>mstop</code> on long log-level series under-smooths the trend); <code><a href="../reference/hamilton_filter.html">hamilton_filter()</a></code> documents the conditional bootstrap band behaviour.</li>

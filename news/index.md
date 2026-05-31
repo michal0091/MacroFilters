@@ -2,8 +2,6 @@
 
 ## MacroFilters 0.2.0
 
-## MacroFilters 0.1.0.9000 (development version)
-
 ### New features
 
 - Confidence bands via block bootstrap for **all four filters**
