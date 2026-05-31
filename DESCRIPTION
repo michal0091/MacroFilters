@@ -1,6 +1,6 @@
 Package: MacroFilters
 Title: Robust Trend-Cycle Decomposition for Macroeconomic Time Series
-Version: 0.1.0
+Version: 0.1.0.9000
 Authors@R: 
     person("Michal", "Kinel", , "michal.kinel@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0007-3295-7199"))
