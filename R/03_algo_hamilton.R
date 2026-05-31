@@ -30,6 +30,15 @@
 #' The lag matrix is constructed vectorized via `embed()` and the
 #' regression is solved with [stats::lm.fit()] for speed.
 #'
+#' When `boot_iter > 0`, the confidence band comes from a residual bootstrap
+#' that holds the observed lead-in fixed (conditional on initial values) and
+#' resamples residuals only over the valid window. A direct consequence is
+#' that the band is narrow at the start of the valid window -- where the
+#' predictors are entirely the (frozen) lead-in, so only the regression
+#' coefficients vary across replicates -- and widens forward as the predictors
+#' themselves become resampled quantities. This is the correct behaviour of a
+#' conditional bootstrap, not an artefact.
+#'
 #' @return A list of class `c("macrofilter", "list")` with `trend`, `cycle`,
 #'   `data`, and `meta` (`h`, `p`, `coefficients`, `compute_time`). When
 #'   `boot_iter > 0` it also carries `trend_lower` and `trend_upper` (95%
