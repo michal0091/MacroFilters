@@ -26,6 +26,7 @@
 #' @param freq Numeric frequency override (1 = annual, 4 = quarterly,
 #'   12 = monthly). Used only when `lambda` is `NULL` and the frequency cannot
 #'   be inferred from `x`.
+#' @inheritParams mbh_filter
 #'
 #' @details
 #' The boosted HP filter starts from the standard HP solution and then
@@ -43,9 +44,12 @@
 #'   \item{`"fixed"`}{Runs exactly `iter_max` iterations.}
 #' }
 #'
-#' @return A `macrofilter` object with `trend`, `cycle`, `data`, and `meta`
-#'   components.  The `meta` list contains `method = "bHP"`, `lambda`,
-#'   `iterations`, `stopping_rule`, and `compute_time`.
+#' @return A list of class `c("macrofilter", "list")` with `trend`, `cycle`,
+#'   `data`, and `meta` (`method = "bHP"`, `lambda`, `iterations`,
+#'   `stopping_rule`, `compute_time`). When `boot_iter > 0` it also carries
+#'   `trend_lower` and `trend_upper` (95% normal-approximation bootstrap band);
+#'   each bootstrap refit runs a *fixed* `iterations` passes, conditioning on
+#'   the complexity selected by the base fit.
 #'
 #' @references
 #' Phillips, P.C.B. and Shi, Z. (2021). Boosting: Why You Can Use the HP
@@ -62,7 +66,8 @@
 #' print(result)
 bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
                        stopping = c("bic", "adf", "fixed"),
-                       sig_level = 0.05, freq = NULL) {
+                       sig_level = 0.05, freq = NULL,
+                       boot_iter = 0, block_size = "auto") {
 
   # 1. Ingest ----------------------------------------------------------------
   inputs <- ensure_computable(x)
@@ -193,23 +198,43 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
 
   elapsed <- (proc.time() - t0)[["elapsed"]]
 
-  # 9. Package into macrofilter -----------------------------------------------
-  result <- new_macrofilter(
-    cycle = final_cycle,
+  # 9. Optional block bootstrap ----------------------------------------------
+  ci_bands <- NULL
+  if (boot_iter > 0L) {
+    bs <- .resolve_block_size(x, block_size, n)
+    ff <- function(y_b) y_b - .bhp_fast(y_b, lambda, final_iter)
+    ci_bands <- .boot_engine(
+      filter_func = ff,
+      trend_base  = final_trend,
+      cycle_base  = final_cycle,
+      boot_iter   = as.integer(boot_iter),
+      block_size  = bs
+    )
+  }
+
+  # 10. Build S3 result -------------------------------------------------------
+  result <- list(
     trend = final_trend,
+    cycle = final_cycle,
     data  = y,
     meta  = list(
       method        = "bHP",
       lambda        = lambda,
       iterations    = final_iter,
       stopping_rule = stopping,
-      compute_time  = elapsed
+      compute_time  = elapsed,
+      ts_class      = inputs$class,
+      tsp           = inputs$tsp,
+      idx           = inputs$idx
     )
   )
+  if (!is.null(ci_bands)) {
+    result$trend_lower <- ci_bands$lower
+    result$trend_upper <- ci_bands$upper
+  }
+  class(result) <- c("macrofilter", "list")
 
-  # 10. Validate --------------------------------------------------------------
   validate_macrofilter(result)
-
   result
 }
 
