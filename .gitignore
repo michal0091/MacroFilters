@@ -11,5 +11,6 @@ docs
 /doc/
 /Meta/
 paper/paper.log
+paper/paper.pdf
 
 /.quarto/
