@@ -72,7 +72,7 @@ autoplot.macrofilter <- function(object, ...) {
     ) +
     ggplot2::geom_line(
       ggplot2::aes(y = Trend, color = "Structural Trend"),
-      linewidth = 1.2, na.rm = TRUE
+      linewidth = 0.9, na.rm = TRUE
     )
 
   # 4.3 Aesthetics + metadata ------------------------------------------------
@@ -83,7 +83,10 @@ autoplot.macrofilter <- function(object, ...) {
       values = c("Observed Data" = "gray40", "Structural Trend" = "#0047AB")
     ) +
     ggplot2::theme_minimal() +
-    ggplot2::theme(legend.title = ggplot2::element_blank()) +
+    ggplot2::theme(
+      legend.position = "bottom",
+      legend.title    = ggplot2::element_blank()
+    ) +
     ggplot2::labs(
       title    = paste(m_name, "Trend Extraction"),
       subtitle = if (has_ci) "With 95% Bootstrap Confidence Intervals" else NULL,
