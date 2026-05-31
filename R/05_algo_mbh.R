@@ -18,24 +18,23 @@
 #'   Maximum number of boosting iterations (default 500).
 #'   If `select_mstop = TRUE` this is the upper bound; the actual stopping
 #'   point is chosen by AICc.
-#' @param d Numeric or `NULL`.
-#'   The delta parameter for Huber loss. If `NULL` (default), it is
-#'   auto-calibrated as the Median Absolute Deviation (MAD) of the first
-#'   differences of the series (`mad(diff(y))`).
-#'
-#'   **Scale-mismatch warning:** When `x` is a log-level series,
-#'   `diff(y)` returns inter-period growth rates (typical scale 0.001–0.02),
-#'   whereas the output gap (the residual the filter must explain) has a much
-#'   larger scale (typical scale 0.01–0.05). Using `mad(diff(y))` as `d`
-#'   therefore sets the Huber threshold far too low: the filter treats normal
-#'   business-cycle oscillations as outliers, truncates their gradients, and
-#'   blocks learning. The trend becomes over-smooth and the cycle absorbs
-#'   too much long-run variance.
-#'
-#'   **Recommendation:** For a quick preliminary calibration use
-#'   `d = mad(hp_filter(x)$cycle)`, which sets the threshold on the residual
-#'   scale. Supply an explicit numeric value to override the automatic
-#'   fallback entirely.
+#' @param d Numeric or `"auto"`.
+#'   The delta parameter for Huber loss. If `"auto"` (default), it is
+#'   calibrated as `stats::mad(.hp_fast(x))`, i.e. the MAD of the HP cyclical
+#'   residual. This anchors the threshold to the output-gap scale rather than
+#'   the growth-rate scale, avoiding the under-truncation failure mode of the
+#'   legacy `mad(diff(y))` heuristic. A `message()` is emitted reporting the
+#'   exact value chosen. Supply an explicit positive numeric to override.
+#' @param boot_iter Non-negative integer.
+#'   Number of block-bootstrap iterations for uncertainty quantification
+#'   (default `0`, bootstrap disabled). When `> 0`, the function adds
+#'   `$trend_lower` and `$trend_upper` (2.5%--97.5% quantile bands) to the
+#'   returned object. See also `block_size`.
+#' @param block_size Positive integer or `"auto"`.
+#'   Block length for the moving-block bootstrap (used only when
+#'   `boot_iter > 0`). If `"auto"` (default), it is set to
+#'   `2 * stats::frequency(x)` (two full cycles), bounded above by
+#'   `floor(length(x) / 3)` to keep at least three blocks.
 #' @param nu Numeric.
 #'   The learning rate (shrinkage) for boosting (default 0.1).
 #' @param df Integer.
@@ -118,7 +117,7 @@
 #'
 #' @export
 #' @importFrom mboost mboost bbs bols Huber boost_control mstop
-#' @importFrom stats fitted AIC
+#' @importFrom stats fitted AIC frequency mad
 #' @importFrom utils capture.output
 #'
 #' @examples
@@ -134,8 +133,9 @@
 #' result2 <- mbh_filter(y2)
 #' print(result2)
 #' }
-mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.1,
-                       df = 4L, select_mstop = FALSE, boundary.knots = NULL) {
+mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
+                       knots = NULL, mstop = 500L, nu = 0.1, df = 4L,
+                       select_mstop = FALSE, boundary.knots = NULL) {
 
   # 1. Ingest ----------------------------------------------------------------
   inputs <- ensure_computable(x)
@@ -148,12 +148,18 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.1,
   }
 
   # 3. Auto-calibrate d (Huber delta) ----------------------------------------
-  # Computed from the MAD of first differences: a robust, scale-invariant
-  # measure of cycle-to-cycle volatility.
-  if (is.null(d)) {
-    d <- stats::mad(diff(y), na.rm = TRUE)
-    # Fallback for perfectly flat or deterministic series (MAD == 0)
-    if (d < 1e-6) d <- 0.01
+  # MAD of the HP cycle anchors the threshold to the output-gap scale,
+  # avoiding the scale-mismatch failure of the legacy mad(diff(y)) heuristic.
+  if (identical(d, "auto")) {
+    d_val <- stats::mad(.hp_fast(x))
+    if (d_val < 1e-6) d_val <- 0.01
+    message(sprintf(
+      "Info: Huber threshold automatically calibrated to d = %.6f via HP cyclical MAD.",
+      d_val
+    ))
+  } else {
+    d_val <- as.double(d)
+    if (d_val < 1e-6) d_val <- 0.01
   }
 
   # 4. Knots heuristic (aggressive) ------------------------------------------
@@ -180,7 +186,7 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.1,
                             boundary.knots = boundary.knots)
 
   # 7. Fit -------------------------------------------------------------------
-  fam  <- mboost::Huber(d = d)
+  fam  <- mboost::Huber(d = d_val)
   ctrl <- mboost::boost_control(mstop = mstop, nu = nu)
 
   utils::capture.output(suppressWarnings(
@@ -218,7 +224,7 @@ mbh_filter <- function(x, knots = NULL, mstop = 500L, d = NULL, nu = 0.1,
     meta  = list(
       method        = "MBH",
       knots         = knots,
-      d             = d,
+      d             = d_val,
       mstop         = mstop_final,
       mstop_initial = mstop,
       nu            = nu,
