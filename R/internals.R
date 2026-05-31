@@ -80,8 +80,10 @@
 #'
 #' Builds a long `data.table` of synthetic series (one per iteration) by
 #' circular-block resampling of the pseudo-residuals, applies `filter_func`
-#' to each block via `data.table`'s `by` grouping, and returns 2.5%/97.5%
-#' quantile bands by time point.
+#' to each block via `data.table`'s `by` grouping, and returns a 95%
+#' normal-approximation band (`trend_base +/- 1.96 * bootstrap sd`) by time
+#' point. The sd is used instead of empirical percentiles because it varies
+#' smoothly and converges with far fewer iterations.
 #'
 #' Uses the Circular Block Bootstrap (Politis & Romano, 1992): block starts
 #' are drawn uniformly from `1:n` and blocks wrap around the series end with
@@ -132,14 +134,24 @@
     y_boot   = trend_base[time_pos] + cycle_base[raw_idx[flat_pos]]
   )
 
-  # Step 6: Apply filter and compute quantiles by reference
+  # Step 6: Apply filter; per time point, get the bootstrap standard deviation
   DT[, boot_trend := filter_func(y_boot), by = iter]
 
-  q_DT <- DT[, .(
-    lower = stats::quantile(boot_trend, 0.025, names = FALSE),
-    upper = stats::quantile(boot_trend, 0.975, names = FALSE)
-  ), by = time_idx]
-  data.table::setorder(q_DT, time_idx)
+  s_DT <- DT[, .(s = stats::sd(boot_trend)), by = time_idx]
+  data.table::setorder(s_DT, time_idx)
 
-  list(lower = q_DT$lower, upper = q_DT$upper)
+  # Step 7: Normal-approximation band centred on the point estimate.
+  # Empirical 2.5/97.5 percentiles need hundreds of iterations to be smooth:
+  # with a practical boot_iter the extreme order statistics are noisy and
+  # leave visible kinks, worst at the high-variance end points. The bootstrap
+  # standard deviation converges far faster and varies smoothly, so
+  # trend_base +/- z * sd gives a clean band that is centred on the trend,
+  # still widens honestly at the boundaries, and is free of jitter. Assumes
+  # an approximately symmetric bootstrap law per time point (CLT for a smooth
+  # functional), which holds well for a trend estimate.
+  z <- stats::qnorm(0.975)
+  list(
+    lower = trend_base - z * s_DT$s,
+    upper = trend_base + z * s_DT$s
+  )
 }
