@@ -314,14 +314,23 @@ ggplot(df_plot, aes(x = t)) +
 
 ## 5. The `macrofilter` S3 Class
 
-All four functions return an object of class `macrofilter`. This is a list with three named elements:
+All four functions return a list of class `c("macrofilter", "list")` with four
+core named elements:
 
 | Element | Type | Description |
 |---|---|---|
-| `$trend` | numeric / ts / xts / zoo | Trend component |
-| `$cycle` | numeric / ts / xts / zoo | Cyclical component |
-| `$data` | numeric / ts / xts / zoo | Original series (immutable) |
-| `$meta` | named list | Filter method, parameters, compute time |
+| `$trend` | numeric | Trend component |
+| `$cycle` | numeric | Cyclical component |
+| `$data` | numeric | Original series (immutable) |
+| `$meta` | named list | Filter method, parameters, temporal identity (`ts_class`, `tsp`, `idx`), compute time |
+
+When a filter is called with `boot_iter > 0`, the object additionally carries
+two bootstrap confidence bands (see the *Uncertainty bands* vignette):
+
+| Element | Type | Description |
+|---|---|---|
+| `$trend_lower` | numeric | Lower 95% band (`trend - 1.96 * bootstrap sd`) |
+| `$trend_upper` | numeric | Upper 95% band (`trend + 1.96 * bootstrap sd`) |
 
 ### Printing
 
