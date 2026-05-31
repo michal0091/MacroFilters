@@ -18,6 +18,16 @@
 #'   Maximum number of boosting iterations (default 500).
 #'   If `select_mstop = TRUE` this is the upper bound; the actual stopping
 #'   point is chosen by AICc.
+#'
+#'   **Under-smoothing warning (`mstop` vs `d`):** when `d` is small relative
+#'   to the trend's range -- the typical case for long log-level series, where
+#'   the cycle (hence the auto-calibrated `d`) is tiny but the trend spans a
+#'   large range -- the Huber loss caps the gradient from the first iteration,
+#'   so each boosting step advances the trend only slightly. Reducing `mstop`
+#'   then leaves the trend unable to climb its full range: it collapses to a
+#'   nearly flat curve while the cycle absorbs the long-run variation. Keep the
+#'   default `mstop = 500` (or higher) for such series; lower it only for short
+#'   or high-cycle-variance inputs.
 #' @param d Numeric or `"auto"`.
 #'   The delta parameter for Huber loss. If `"auto"` (default), it is
 #'   calibrated as `stats::mad(.hp_fast(x))`, i.e. the MAD of the HP cyclical
