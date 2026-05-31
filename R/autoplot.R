@@ -33,7 +33,8 @@ ggplot2::autoplot
 #' }
 autoplot.macrofilter <- function(object, ...) {
   has_ci <- !is.null(object$trend_lower) && !is.null(object$trend_upper)
-  time_idx <- seq_along(object$trend)
+  tax      <- .mf_time_axis(object)   # real dates / decimal time / index
+  time_idx <- tax$time
 
   # Long-format data for the line layers (observed + trend) via melt
   wide <- data.table::data.table(
@@ -87,11 +88,39 @@ autoplot.macrofilter <- function(object, ...) {
     ) +
     ggplot2::labs(
       title    = sprintf("MacroFilter decomposition [%s]", object$meta$method),
-      x        = "Time index",
+      x        = tax$xlab,
       y        = "Value",
       colour   = NULL, linewidth = NULL, alpha = NULL
     ) +
     ggplot2::theme_minimal()
 
   p
+}
+
+# ── Internal: reconstruct the x-axis from the object's temporal identity ──────
+
+#' Build the plotting time axis for a macrofilter
+#'
+#' Uses the temporal metadata stored by the filters (`meta$tsp` for `ts`
+#' input, `meta$idx` for `xts`/`zoo`) to map observations back to real time.
+#' Falls back to a positional index for plain numeric input.
+#'
+#' @param object A `macrofilter` object.
+#' @return A list with `time` (axis values) and `xlab` (axis label).
+#' @keywords internal
+#' @noRd
+.mf_time_axis <- function(object) {
+  n <- length(object$trend)
+  m <- object$meta
+
+  if (!is.null(m$tsp)) {
+    # ts input: evenly spaced decimal time from start to end
+    list(time = seq(m$tsp[1L], m$tsp[2L], length.out = n), xlab = "Time")
+  } else if (!is.null(m$idx) && length(m$idx) == n) {
+    # xts / zoo input: real date index
+    list(time = m$idx, xlab = "Date")
+  } else {
+    # plain numeric: positional index
+    list(time = seq_len(n), xlab = "Time index")
+  }
 }
