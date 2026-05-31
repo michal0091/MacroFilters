@@ -15,6 +15,14 @@
   the Huber threshold `d` when the input is a plain numeric vector whose true
   frequency is not annual.
 
+## Performance
+
+* The HP system matrix is now Cholesky-factorized **once** and reused across
+  every bootstrap replicate (and every bHP inner iteration), instead of being
+  re-factorized on each solve. This markedly speeds up `hp_filter()` and
+  `bhp_filter()` with `boot_iter > 0` (and the base bHP fit), with bit-identical
+  results.
+
 ## Other changes
 
 * The `d = "auto"` calibration in `mbh_filter()` now uses the MAD of the HP
