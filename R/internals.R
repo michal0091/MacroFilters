@@ -35,6 +35,88 @@
 }
 
 
+#' Fast Hamilton cycle (regression residuals)
+#'
+#' Bare-metal version of [hamilton_filter()] for use inside `.boot_engine`.
+#' Builds the lag matrix with `embed()` and solves the OLS via `lm.fit()`;
+#' returns only the cycle, full length, with the first `h + p - 1` lead-in
+#' positions left as `NA` (package convention).
+#'
+#' @param y Numeric vector.
+#' @param h Integer horizon.
+#' @param p Integer number of lags.
+#' @return Numeric cycle vector, same length as `y` (NA lead-in).
+#' @keywords internal
+#' @noRd
+.hamilton_fast <- function(y, h, p) {
+  n       <- length(y)
+  n_valid <- n - h - p + 1L
+  E       <- stats::embed(y, p)
+  X       <- cbind(1, E[seq_len(n_valid), , drop = FALSE])
+  target  <- y[(p + h):n]
+  fit     <- stats::lm.fit(X, target)
+
+  cycle <- rep(NA_real_, n)
+  cycle[(p + h):n] <- fit$residuals
+  cycle
+}
+
+
+#' Fast boosted-HP cycle (fixed iteration count)
+#'
+#' Bare-metal version of [bhp_filter()] for use inside `.boot_engine`. Runs a
+#' tight `for` loop that re-applies the HP smoother to the running residual a
+#' fixed number of times (no BIC/ADF stopping) and returns the accumulated
+#' cycle. Conditioning on a fixed `iter` is what makes the bootstrap refit use
+#' the *same estimator* as the base fit.
+#'
+#' @param y Numeric vector.
+#' @param lambda HP smoothing parameter.
+#' @param iter Integer number of boosting passes (the base fit's final count).
+#' @return Numeric cycle vector, same length as `y`.
+#' @keywords internal
+#' @noRd
+.bhp_fast <- function(y, lambda, iter) {
+  n <- length(y)
+  if (n < 3L) return(rep(0, n))
+
+  D <- Matrix::bandSparse(
+    n - 2L, n,
+    k         = c(0L, 1L, 2L),
+    diagonals = list(rep(1, n - 2L), rep(-2, n - 2L), rep(1, n - 2L))
+  )
+  Q <- Matrix::Diagonal(n) + lambda * Matrix::crossprod(D)
+
+  u <- y
+  for (i in seq_len(iter)) {
+    u <- u - as.numeric(Matrix::solve(Q, u))   # peel off each trend increment
+  }
+  u                                            # cycle = y - accumulated trend
+}
+
+
+#' Resolve the bootstrap block size
+#'
+#' Shared "auto" logic so every public filter resolves `block_size`
+#' identically: two full cycles (`2 * frequency`) for `"auto"`, otherwise the
+#' user value, both capped at `floor(n_eff / 3)` to keep at least three blocks.
+#'
+#' @param x Original input (for `stats::frequency`).
+#' @param block_size `"auto"` or a positive integer.
+#' @param n_eff Effective series length the engine will resample over.
+#' @return Positive integer block size.
+#' @keywords internal
+#' @noRd
+.resolve_block_size <- function(x, block_size, n_eff) {
+  cap <- max(1L, floor(n_eff / 3L))
+  if (identical(block_size, "auto")) {
+    max(1L, min(2L * as.integer(stats::frequency(x)), cap))
+  } else {
+    max(1L, min(as.integer(block_size), cap))
+  }
+}
+
+
 #' Stripped MBH trend for bootstrap iterations
 #'
 #' Runs mboost with a reduced iteration budget so that applying it hundreds
