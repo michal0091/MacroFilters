@@ -113,7 +113,8 @@ hp_filter <- function(x, lambda = NULL, freq = NULL,
   ci_bands <- NULL
   if (boot_iter > 0L) {
     bs <- .resolve_block_size(x, block_size, n)
-    ff <- function(y_b) y_b - .hp_fast(y_b, lambda = lambda)
+    CH <- .build_hp_cholesky(n, lambda)        # factorize once, reuse per replicate
+    ff <- function(y_b) y_b - .hp_fast(y_b, CH = CH)
     ci_bands <- .boot_engine(
       filter_func = ff,
       trend_base  = trend_num,
