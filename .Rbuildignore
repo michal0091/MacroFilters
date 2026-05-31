@@ -18,3 +18,5 @@
 ^data-raw$
 ^paper$
 ^CRAN-SUBMISSION$
+^vignettes/.*_cache$
+^vignettes/.*\.html$
