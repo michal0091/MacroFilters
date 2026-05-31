@@ -8,6 +8,6 @@ NULL
 utils::globalVariables(c(
   # .boot_engine() data.table symbols
   "iter", "time_idx", "y_boot", "boot_trend",
-  # autoplot.macrofilter() melt + aes symbols
-  "time", "value", "series", "lower", "upper"
+  # autoplot.macrofilter() data.table + aes symbols
+  "time", "Data", "Trend", "lower", "upper"
 ))
