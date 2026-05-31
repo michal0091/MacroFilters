@@ -8,16 +8,22 @@
 #' always on the correct residual scale.
 #'
 #' @param x Numeric vector or `ts` object.
+#' @param lambda Optional smoothing parameter. If `NULL` (default) it is
+#'   derived from `stats::frequency(x)` via the Ravn-Uhlig rule. Supply an
+#'   explicit value to override frequency detection (e.g. a plain numeric
+#'   vector that is really monthly data).
 #' @return Numeric vector of cyclical residuals, same length as `x`.
 #' @keywords internal
 #' @noRd
-.hp_fast <- function(x) {
+.hp_fast <- function(x, lambda = NULL) {
   n <- length(x)
   if (n < 3L) return(rep(0, n))          # bandSparse needs n-2 >= 1 rows
 
-  freq   <- stats::frequency(x)          # 1 for numeric/annual, 4/12 for ts
-  y      <- as.double(x)
-  lambda <- 6.25 * freq^4                # Ravn-Uhlig rule
+  if (is.null(lambda)) {
+    freq   <- stats::frequency(x)        # 1 for numeric/annual, 4/12 for ts
+    lambda <- 6.25 * freq^4              # Ravn-Uhlig rule
+  }
+  y <- as.double(x)
 
   D <- Matrix::bandSparse(
     n - 2L, n,
