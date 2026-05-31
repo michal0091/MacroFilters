@@ -35,6 +35,13 @@
 #'   `boot_iter > 0`). If `"auto"` (default), it is set to
 #'   `2 * stats::frequency(x)` (two full cycles), bounded above by
 #'   `floor(length(x) / 3)` to keep at least three blocks.
+#' @param hp_lambda Numeric or `NULL`.
+#'   Smoothing parameter for the internal HP filter used to auto-calibrate
+#'   `d` (only relevant when `d = "auto"`). If `NULL` (default), it is derived
+#'   from `stats::frequency(x)` via the Ravn-Uhlig rule. **Supply this when
+#'   `x` is a plain numeric vector whose true frequency is not annual**, since
+#'   `frequency()` returns `1` for unclassed vectors and would otherwise
+#'   under-smooth the calibration cycle (e.g. monthly data: `hp_lambda = 129600`).
 #' @param nu Numeric.
 #'   The learning rate (shrinkage) for boosting (default 0.1).
 #' @param df Integer.
@@ -111,14 +118,21 @@
 #'   }
 #' }
 #'
-#' @return A `macrofilter` object with `trend`, `cycle`, `data`, and `meta`
-#'   components.  The `meta` list contains `method = "MBH"`, `knots`, `d`,
-#'   `mstop`, `nu`, `df`, `select_mstop`, and `compute_time`.
+#' @return A list of class `c("macrofilter", "list")` with:
+#'   \describe{
+#'     \item{`$trend`}{Numeric trend vector.}
+#'     \item{`$cycle`}{Numeric cycle vector.}
+#'     \item{`$data`}{Original input as numeric.}
+#'     \item{`$meta`}{Named list: `method`, `knots`, `d`, `mstop`, `nu`,
+#'       `df`, `select_mstop`, `compute_time`.}
+#'     \item{`$trend_lower`, `$trend_upper`}{2.5% and 97.5% bootstrap quantile
+#'       bands. Present only when `boot_iter > 0`.}
+#'   }
 #'
 #' @export
 #' @importFrom mboost mboost bbs bols Huber boost_control mstop
-#' @importFrom stats fitted AIC frequency mad
-#' @importFrom utils capture.output
+#' @importFrom stats fitted AIC frequency mad quantile
+#' @importFrom data.table data.table setorder
 #'
 #' @examples
 #' # Fast example with reduced series and iterations
@@ -135,7 +149,8 @@
 #' }
 mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
                        knots = NULL, mstop = 500L, nu = 0.1, df = 4L,
-                       select_mstop = FALSE, boundary.knots = NULL) {
+                       select_mstop = FALSE, boundary.knots = NULL,
+                       hp_lambda = NULL) {
 
   # 1. Ingest ----------------------------------------------------------------
   inputs <- ensure_computable(x)
@@ -150,8 +165,9 @@ mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
   # 3. Auto-calibrate d (Huber delta) ----------------------------------------
   # MAD of the HP cycle anchors the threshold to the output-gap scale,
   # avoiding the scale-mismatch failure of the legacy mad(diff(y)) heuristic.
+  # hp_lambda guards calibration for frequency-less numeric input (see @param).
   if (identical(d, "auto")) {
-    d_val <- stats::mad(.hp_fast(x))
+    d_val <- stats::mad(.hp_fast(x, lambda = hp_lambda))
     if (d_val < 1e-6) d_val <- 0.01
     message(sprintf(
       "Info: Huber threshold automatically calibrated to d = %.6f via HP cyclical MAD.",
@@ -187,14 +203,15 @@ mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
 
   # 7. Fit -------------------------------------------------------------------
   fam  <- mboost::Huber(d = d_val)
-  ctrl <- mboost::boost_control(mstop = mstop, nu = nu)
+  # Native silencing via trace = FALSE instead of capturing stdout.
+  ctrl <- mboost::boost_control(mstop = mstop, nu = nu, trace = FALSE)
 
-  utils::capture.output(suppressWarnings(
+  suppressWarnings(
     mod <- mboost::mboost(
       y ~ bl_linear + bl_smooth,
       data = df_boost, family = fam, control = ctrl
     )
-  ))
+  )
 
   # 7.5. Optional AICc-based mstop selection ---------------------------------
   mstop_final <- mstop
@@ -216,26 +233,57 @@ mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
 
   elapsed <- (proc.time() - t0)[["elapsed"]]
 
-  # 9. Package into macrofilter ----------------------------------------------
-  result <- new_macrofilter(
-    cycle = cycle_num,
+  # 9. Optional block bootstrap -----------------------------------------------
+  ci_bands <- NULL
+  if (boot_iter > 0L) {
+    bs <- if (identical(block_size, "auto")) {
+      max(1L, min(2L * as.integer(stats::frequency(x)), floor(n / 3L)))
+    } else {
+      max(1L, min(as.integer(block_size), floor(n / 3L)))
+    }
+    mstop_boot <- max(50L, mstop_final %/% 5L)
+    ff <- function(y_b) {
+      .mbh_fast_trend(y_b, d_val, knots, mstop_boot, nu, df, boundary.knots)
+    }
+    ci_bands <- .boot_engine(
+      filter_func = ff,
+      trend_base  = trend_num,
+      cycle_base  = cycle_num,
+      boot_iter   = as.integer(boot_iter),
+      block_size  = bs
+    )
+  }
+
+  # 10. Build S3 result -------------------------------------------------------
+  result <- list(
     trend = trend_num,
+    cycle = cycle_num,
     data  = y,
     meta  = list(
-      method        = "MBH",
-      knots         = knots,
-      d             = d_val,
-      mstop         = mstop_final,
-      mstop_initial = mstop,
-      nu            = nu,
-      df            = df,
+      method         = "MBH",
+      knots          = knots,
+      d              = d_val,
+      mstop          = mstop_final,
+      mstop_initial  = mstop,
+      nu             = nu,
+      df             = df,
       select_mstop   = select_mstop,
       boundary.knots = boundary.knots,
-      compute_time   = elapsed
+      compute_time   = elapsed,
+      # Temporal identity: stored once so trend, cycle AND bands can all be
+      # mapped back to real dates downstream (e.g. autoplot x-axis).
+      ts_class       = inputs$class,
+      tsp            = inputs$tsp,
+      idx            = inputs$idx
     )
   )
+  if (!is.null(ci_bands)) {
+    result$trend_lower <- ci_bands$lower
+    result$trend_upper <- ci_bands$upper
+  }
+  class(result) <- c("macrofilter", "list")
 
-  # 10. Validate --------------------------------------------------------------
+  # 11. Validate --------------------------------------------------------------
   validate_macrofilter(result)
 
   result
