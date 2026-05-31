@@ -24,12 +24,12 @@ RoxygenNote: 7.3.3
 URL: https://github.com/michal0091/MacroFilters, https://michal0091.github.io/MacroFilters/
 BugReports: https://github.com/michal0091/MacroFilters/issues
 Imports:
+    data.table,
+    ggplot2,
     Matrix,
     mboost,
     tseries
 Suggests:
-    data.table,
-    ggplot2,
     knitr,
     rmarkdown,
     scales,
@@ -39,5 +39,6 @@ Suggests:
     xts,
     zoo
 VignetteBuilder: knitr
-Depends: 
+Depends:
     R (>= 3.5)
+Config/testthat/edition: 3
