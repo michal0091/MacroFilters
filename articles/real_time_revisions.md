@@ -69,7 +69,7 @@ a distinct failure mode:
 
 ``` r
 
-T_max    <- nrow(us_gdp_vintage)   # full-sample size (316 rows as of 2025)
+T_max    <- nrow(us_gdp_vintage)   # full-sample size (computed from the data)
 ref_date <- as.Date("2019-10-01")  # 2019 Q4 — last pre-COVID quarter
 ref_idx  <- which(us_gdp_vintage$date == ref_date)
 
@@ -167,16 +167,20 @@ y_demo  <- us_gdp_vintage$gdp_log[seq_len(n_demo)]
 
 res_free      <- mbh_filter(y_demo, knots = fixed_knots, df = fixed_df,
                              mstop = fixed_mstop, boundary.knots = NULL)
+#> Info: Huber threshold automatically calibrated to d = 0.005570 via HP cyclical MAD.
 res_anchored  <- mbh_filter(y_demo, knots = fixed_knots, df = fixed_df,
                              mstop = fixed_mstop, boundary.knots = fixed_bounds)
+#> Info: Huber threshold automatically calibrated to d = 0.005570 via HP cyclical MAD.
 
 # Extend by one observation and refit
 y_demo_p1 <- us_gdp_vintage$gdp_log[seq_len(n_demo + 1L)]
 
 res_free_p1     <- mbh_filter(y_demo_p1, knots = fixed_knots, df = fixed_df,
                                mstop = fixed_mstop, boundary.knots = NULL)
+#> Info: Huber threshold automatically calibrated to d = 0.005547 via HP cyclical MAD.
 res_anchored_p1 <- mbh_filter(y_demo_p1, knots = fixed_knots, df = fixed_df,
                                mstop = fixed_mstop, boundary.knots = fixed_bounds)
+#> Info: Huber threshold automatically calibrated to d = 0.005547 via HP cyclical MAD.
 
 # Revision at the final shared observation (position n_demo)
 rev_free     <- abs(res_free_p1$trend[n_demo]     - res_free$trend[n_demo])
@@ -187,8 +191,8 @@ cat(sprintf(
   n_demo, rev_free, rev_anchored
 ))
 #> Revision at obs 200 after adding one data point:
-#>   free domain   : 0.000154
-#>   anchored domain: 0.000069
+#>   free domain   : 0.006897
+#>   anchored domain: 0.007052
 ```
 
 The anchored revision is smaller because a fixed `boundary.knots`

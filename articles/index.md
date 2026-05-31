@@ -8,3 +8,5 @@
   Real-Time](https://michal0091.github.io/MacroFilters/articles/real_time_revisions.md):
 - [Hyperparameter Tuning for the MacroBoost Hybrid
   Filter](https://michal0091.github.io/MacroFilters/articles/tuning_mbh.md):
+- [Uncertainty Bands via Block
+  Bootstrap](https://michal0091.github.io/MacroFilters/articles/uncertainty_bands.md):

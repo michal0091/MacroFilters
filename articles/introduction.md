@@ -168,7 +168,7 @@ ham
 #>    Observations : 100
 #>    Parameters   : h = 8, p = 4
 #>    Cycle range  : [-13.41, 11.8]  sd = 7.212
-#>    Compute time : 0.001 s
+#>    Compute time : 0.000 s
 ```
 
 Note that the first $`h + p - 1`$ observations of the trend and cycle
@@ -204,7 +204,7 @@ bhp
 #>    Observations : 100
 #>    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic
 #>    Cycle range  : [-5.487, 4.068]  sd = 1.857
-#>    Compute time : 0.003 s
+#>    Compute time : 0.002 s
 ```
 
 Internally, **MacroFilters** precomputes the sparse penalty matrix
@@ -337,7 +337,7 @@ mbh_res
 #>    Observations : 105
 #>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
-#>    Compute time : 0.097 s
+#>    Compute time : 0.115 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -346,15 +346,24 @@ mbh_res
 
 ## 5. The `macrofilter` S3 Class
 
-All four functions return an object of class `macrofilter`. This is a
-list with three named elements:
+All four functions return a list of class `c("macrofilter", "list")`
+with four core named elements:
 
-| Element  | Type                     | Description                             |
-|----------|--------------------------|-----------------------------------------|
-| `$trend` | numeric / ts / xts / zoo | Trend component                         |
-| `$cycle` | numeric / ts / xts / zoo | Cyclical component                      |
-| `$data`  | numeric / ts / xts / zoo | Original series (immutable)             |
-| `$meta`  | named list               | Filter method, parameters, compute time |
+| Element | Type | Description |
+|----|----|----|
+| `$trend` | numeric | Trend component |
+| `$cycle` | numeric | Cyclical component |
+| `$data` | numeric | Original series (immutable) |
+| `$meta` | named list | Filter method, parameters, temporal identity (`ts_class`, `tsp`, `idx`), compute time |
+
+When a filter is called with `boot_iter > 0`, the object additionally
+carries two bootstrap confidence bands (see the *Uncertainty bands*
+vignette):
+
+| Element        | Type    | Description                                    |
+|----------------|---------|------------------------------------------------|
+| `$trend_lower` | numeric | Lower 95% band (`trend - 1.96 * bootstrap sd`) |
+| `$trend_upper` | numeric | Upper 95% band (`trend + 1.96 * bootstrap sd`) |
 
 ### Printing
 
@@ -365,7 +374,7 @@ mbh_res
 #>    Observations : 105
 #>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
-#>    Compute time : 0.097 s
+#>    Compute time : 0.115 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -392,7 +401,7 @@ max(abs((mbh_res$trend + mbh_res$cycle) - mbh_res$data))  # should be < 1e-9
 ``` r
 
 str(mbh_res$meta)
-#> List of 10
+#> List of 13
 #>  $ method        : chr "MBH"
 #>  $ knots         : int 52
 #>  $ d             : num 0.0146
@@ -402,7 +411,10 @@ str(mbh_res$meta)
 #>  $ df            : int 4
 #>  $ select_mstop  : logi FALSE
 #>  $ boundary.knots: NULL
-#>  $ compute_time  : num 0.097
+#>  $ compute_time  : num 0.115
+#>  $ ts_class      : chr "ts"
+#>  $ tsp           : num [1:3] 2000 2026 4
+#>  $ idx           : NULL
 ```
 
 The `meta` list stores every parameter used by the filter, making

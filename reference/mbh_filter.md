@@ -10,13 +10,16 @@ them from distorting the trend.
 ``` r
 mbh_filter(
   x,
+  d = "auto",
+  boot_iter = 0,
+  block_size = "auto",
   knots = NULL,
   mstop = 500L,
-  d = NULL,
   nu = 0.1,
   df = 4L,
   select_mstop = FALSE,
-  boundary.knots = NULL
+  boundary.knots = NULL,
+  hp_lambda = NULL
 )
 ```
 
@@ -25,6 +28,36 @@ mbh_filter(
 - x:
 
   Numeric vector, `ts`, `xts`, or `zoo` object.
+
+- d:
+
+  Numeric or `"auto"`. The delta parameter for Huber loss. If `"auto"`
+  (default), it is calibrated as `stats::mad(.hp_fast(x))`, i.e. the MAD
+  of the HP cyclical residual. This anchors the threshold to the
+  output-gap scale rather than the growth-rate scale, avoiding the
+  under-truncation failure mode of the legacy `mad(diff(y))` heuristic.
+  A [`message()`](https://rdrr.io/r/base/message.html) is emitted
+  reporting the exact value chosen. Supply an explicit positive numeric
+  to override.
+
+- boot_iter:
+
+  Non-negative integer. Number of block-bootstrap iterations for
+  uncertainty quantification (default `0`, bootstrap disabled). When
+  `> 0`, the function adds `$trend_lower` and `$trend_upper`: a 95%
+  normal-approximation band, `trend +/- 1.96 * sd(bootstrap trends)`,
+  centred on the estimated trend. The bootstrap sd is used instead of
+  empirical percentiles because it is smooth and stable at practical
+  `boot_iter`. Each bootstrap refit uses the same `mstop` as the base
+  fit, so larger `boot_iter` raises cost linearly. See also
+  `block_size`.
+
+- block_size:
+
+  Positive integer or `"auto"`. Block length for the moving-block
+  bootstrap (used only when `boot_iter > 0`). If `"auto"` (default), it
+  is set to `2 * stats::frequency(x)` (two full cycles), bounded above
+  by `floor(length(x) / 3)` to keep at least three blocks.
 
 - knots:
 
@@ -38,25 +71,16 @@ mbh_filter(
   `select_mstop = TRUE` this is the upper bound; the actual stopping
   point is chosen by AICc.
 
-- d:
-
-  Numeric or `NULL`. The delta parameter for Huber loss. If `NULL`
-  (default), it is auto-calibrated as the Median Absolute Deviation
-  (MAD) of the first differences of the series (`mad(diff(y))`).
-
-  **Scale-mismatch warning:** When `x` is a log-level series, `diff(y)`
-  returns inter-period growth rates (typical scale 0.001–0.02), whereas
-  the output gap (the residual the filter must explain) has a much
-  larger scale (typical scale 0.01–0.05). Using `mad(diff(y))` as `d`
-  therefore sets the Huber threshold far too low: the filter treats
-  normal business-cycle oscillations as outliers, truncates their
-  gradients, and blocks learning. The trend becomes over-smooth and the
-  cycle absorbs too much long-run variance.
-
-  **Recommendation:** For a quick preliminary calibration use
-  `d = mad(hp_filter(x)$cycle)`, which sets the threshold on the
-  residual scale. Supply an explicit numeric value to override the
-  automatic fallback entirely.
+  **Under-smoothing warning (`mstop` vs `d`):** when `d` is small
+  relative to the trend's range – the typical case for long log-level
+  series, where the cycle (hence the auto-calibrated `d`) is tiny but
+  the trend spans a large range – the Huber loss caps the gradient from
+  the first iteration, so each boosting step advances the trend only
+  slightly. Reducing `mstop` then leaves the trend unable to climb its
+  full range: it collapses to a nearly flat curve while the cycle
+  absorbs the long-run variation. Keep the default `mstop = 500` (or
+  higher) for such series; lower it only for short or
+  high-cycle-variance inputs.
 
 - nu:
 
@@ -99,11 +123,42 @@ mbh_filter(
   of `time_idx` is used. For real-time stability, fix this to the
   full-sample domain so the basis does not shift as the sample grows.
 
+- hp_lambda:
+
+  Numeric or `NULL`. Smoothing parameter for the internal HP filter used
+  to auto-calibrate `d` (only relevant when `d = "auto"`). If `NULL`
+  (default), it is derived from `stats::frequency(x)` via the Ravn-Uhlig
+  rule. **Supply this when `x` is a plain numeric vector whose true
+  frequency is not annual**, since
+  [`frequency()`](https://rdrr.io/r/stats/time.html) returns `1` for
+  unclassed vectors and would otherwise under-smooth the calibration
+  cycle (e.g. monthly data: `hp_lambda = 129600`).
+
 ## Value
 
-A `macrofilter` object with `trend`, `cycle`, `data`, and `meta`
-components. The `meta` list contains `method = "MBH"`, `knots`, `d`,
-`mstop`, `nu`, `df`, `select_mstop`, and `compute_time`.
+A list of class `c("macrofilter", "list")` with:
+
+- `$trend`:
+
+  Numeric trend vector.
+
+- `$cycle`:
+
+  Numeric cycle vector.
+
+- `$data`:
+
+  Original input as numeric.
+
+- `$meta`:
+
+  Named list: `method`, `knots`, `d`, `mstop`, `nu`, `df`,
+  `select_mstop`, `compute_time`.
+
+- `$trend_lower`, `$trend_upper`:
+
+  95% normal-approximation bootstrap band (`trend +/- 1.96 * sd`).
+  Present only when `boot_iter > 0`.
 
 ## Details
 
@@ -161,22 +216,24 @@ The defaults guard against all three:
 set.seed(42)
 y <- ts(cumsum(rnorm(80)), start = c(2000, 1), frequency = 4)
 result <- mbh_filter(y, mstop = 100L)
+#> Info: Huber threshold automatically calibrated to d = 1.627402 via HP cyclical MAD.
 print(result)
 #> -- MacroFilter [MBH] --
 #>    Observations : 80
-#>    Parameters   : knots = 40, d = 0.9356, mstop = 100, mstop_initial = 100, nu = 0.1, df = 4, select_mstop = FALSE
-#>    Cycle range  : [-2.445, 5.094]  sd = 1.643
-#>    Compute time : 0.031 s
+#>    Parameters   : knots = 40, d = 1.627, mstop = 100, mstop_initial = 100, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Cycle range  : [-2.66, 4.533]  sd = 1.518
+#>    Compute time : 0.026 s
 
 # \donttest{
 # Full example with default parameters
 y2 <- ts(cumsum(rnorm(200)), start = c(2000, 1), frequency = 4)
 result2 <- mbh_filter(y2)
+#> Info: Huber threshold automatically calibrated to d = 1.161531 via HP cyclical MAD.
 print(result2)
 #> -- MacroFilter [MBH] --
 #>    Observations : 200
-#>    Parameters   : knots = 100, d = 0.9282, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
-#>    Cycle range  : [-4.004, 3.762]  sd = 1.463
-#>    Compute time : 0.145 s
+#>    Parameters   : knots = 100, d = 1.162, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Cycle range  : [-4.077, 3.726]  sd = 1.419
+#>    Compute time : 0.143 s
 # }
 ```

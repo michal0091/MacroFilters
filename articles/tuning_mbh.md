@@ -38,11 +38,13 @@ A practical equivalence: `(mstop = 500, nu = 0.1)` and
 y <- us_gdp_vintage$gdp_log
 
 res_default <- mbh_filter(y, mstop = 500,  nu = 0.10)
+#> Info: Huber threshold automatically calibrated to d = 0.004450 via HP cyclical MAD.
 res_equiv   <- mbh_filter(y, mstop = 1000, nu = 0.05)
+#> Info: Huber threshold automatically calibrated to d = 0.004450 via HP cyclical MAD.
 
 max_diff <- max(abs(res_default$trend - res_equiv$trend))
 cat(sprintf("Max trend difference (mstop×nu equivalence): %.2e\n", max_diff))
-#> Max trend difference (mstop×nu equivalence): 1.65e-07
+#> Max trend difference (mstop×nu equivalence): 8.54e-08
 ```
 
 ### 1.3 `knots` — spline flexibility
@@ -138,11 +140,12 @@ growth-rate standards. This makes growth rates an ideal stress test for
 y_growth <- diff(us_gdp_vintage$gdp_log)   # quarterly log-differences
 
 res_auto   <- mbh_filter(y_growth)
+#> Info: Huber threshold automatically calibrated to d = 0.005430 via HP cyclical MAD.
 res_strict <- mbh_filter(y_growth, d = 0.005)
 res_lenient <- mbh_filter(y_growth, d = 0.02)
 
 cat(sprintf("Auto d = %.6f\n", res_auto$meta$d))
-#> Auto d = 0.008907
+#> Auto d = 0.005430
 ```
 
 ``` r
@@ -227,38 +230,46 @@ print(p_d)
 
 y          <- us_gdp_vintage$gdp_log
 mstop_grid <- seq(100L, 1000L, by = 100L)   # 10 evenly-spaced points
+n_rep      <- 5L                            # replicates per point
 
+# Single-shot timings are dominated by GC pauses and OS scheduling, which
+# produce spurious spikes. We warm up once, then time several runs with a
+# clean heap (gc()) before each and report the MEDIAN, recovering the
+# monotone wall-time vs mstop relationship.
 bench_dt <- rbindlist(lapply(mstop_grid, function(m) {
-  t0       <- proc.time()
-  res      <- mbh_filter(y, mstop = m)
-  elapsed  <- (proc.time() - t0)[["elapsed"]]
-  cycle_sd <- sd(res$cycle)
+  res  <- suppressMessages(mbh_filter(y, mstop = m))   # warm-up + cycle SD
+  reps <- vapply(seq_len(n_rep), function(i) {
+    gc(verbose = FALSE)
+    t0 <- proc.time()
+    suppressMessages(mbh_filter(y, mstop = m))
+    (proc.time() - t0)[["elapsed"]]
+  }, numeric(1))
   data.table(
     mstop       = m,
-    elapsed_sec = round(elapsed, 3),
-    cycle_sd    = round(cycle_sd, 6)
+    elapsed_sec = round(median(reps), 3),
+    cycle_sd    = round(sd(res$cycle), 6)
   )
 }))
 
 knitr::kable(
   bench_dt,
   col.names = c("mstop", "Wall time (s)", "Cycle SD"),
-  caption   = "MBH computational benchmark — US log GDP (316 obs)"
+  caption   = sprintf("MBH computational benchmark — US log GDP (%d obs)", length(y))
 )
 ```
 
 | mstop | Wall time (s) | Cycle SD |
 |------:|--------------:|---------:|
-|   100 |         0.037 | 0.643260 |
-|   200 |         0.118 | 0.584503 |
-|   300 |         0.093 | 0.526034 |
-|   400 |         0.117 | 0.467963 |
-|   500 |         0.137 | 0.410462 |
-|   600 |         0.154 | 0.353805 |
-|   700 |         0.175 | 0.298887 |
-|   800 |         0.192 | 0.247910 |
-|   900 |         0.228 | 0.201850 |
-|  1000 |         0.470 | 0.162069 |
+|   100 |         0.044 | 0.663846 |
+|   200 |         0.068 | 0.625541 |
+|   300 |         0.092 | 0.587335 |
+|   400 |         0.124 | 0.549249 |
+|   500 |         0.141 | 0.511309 |
+|   600 |         0.158 | 0.473548 |
+|   700 |         0.180 | 0.436016 |
+|   800 |         0.197 | 0.398778 |
+|   900 |         0.213 | 0.361931 |
+|  1000 |         0.229 | 0.325643 |
 
 MBH computational benchmark — US log GDP (316 obs) {.table}
 
@@ -289,7 +300,7 @@ p_bench <- ggplot(bench_dt, aes(x = mstop)) +
   ) +
   labs(
     title    = "Wall Time vs Boosting Iterations",
-    subtitle = "US Real GDP log level (316 obs). Cycle SD plateaus well before mstop = 500.",
+    subtitle = sprintf("US Real GDP log level (%d obs). Cycle SD plateaus well before mstop = 500.", length(y)),
     x        = "mstop"
   ) +
   theme_minimal(base_size = 12) +

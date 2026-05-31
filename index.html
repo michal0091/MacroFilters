@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">MacroFilters</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,8 +44,10 @@
 <li><a class="dropdown-item" href="articles/introduction.html">Introduction to MacroFilters</a></li>
     <li><a class="dropdown-item" href="articles/real_time_revisions.html">Solving the End-Point Problem in Real-Time</a></li>
     <li><a class="dropdown-item" href="articles/tuning_mbh.html">Hyperparameter Tuning for the MacroBoost Hybrid Filter</a></li>
+    <li><a class="dropdown-item" href="articles/uncertainty_bands.html">Uncertainty Bands via Block Bootstrap</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -133,7 +135,7 @@
 </tr>
 </tbody>
 </table>
-<p>All functions return a <code>macrofilter</code> S3 object.</p>
+<p>All functions return a list of class <code>c("macrofilter", "list")</code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/michal0091/MacroFilters" class="external-link">MacroFilters</a></span><span class="op">)</span></span>
 <span></span>
@@ -143,12 +145,21 @@
 <span></span>
 <span><span class="co"># Access components directly</span></span>
 <span><span class="va">mbh_result</span><span class="op">$</span><span class="va">trend</span></span>
-<span><span class="va">mbh_result</span><span class="op">$</span><span class="va">cycle</span></span></code></pre></div>
+<span><span class="va">mbh_result</span><span class="op">$</span><span class="va">cycle</span></span>
+<span></span>
+<span><span class="co"># Add 95% bootstrap confidence bands and plot them</span></span>
+<span><span class="va">mbh_ci</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/mbh_filter.html">mbh_filter</a></span><span class="op">(</span><span class="va">us_gdp_xts</span>, boot_iter <span class="op">=</span> <span class="fl">50L</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">mbh_ci</span><span class="op">)</span>            <span class="co"># ggplot: trend, observed series and confidence ribbon</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="further-reading">Further Reading<a class="anchor" aria-label="anchor" href="#further-reading"></a>
 </h2>
-<p>See <code><a href="articles/introduction.html">vignette("introduction", package = "MacroFilters")</a></code> for a full walkthrough covering all four filters and the S3 print/meta interface.</p>
+<ul>
+<li>
+<code><a href="articles/introduction.html">vignette("introduction", package = "MacroFilters")</a></code> — full walkthrough of all four filters and the S3 print/meta interface.</li>
+<li>
+<code><a href="articles/uncertainty_bands.html">vignette("uncertainty_bands", package = "MacroFilters")</a></code> — confidence bands via block bootstrap and the <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> method.</li>
+</ul>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

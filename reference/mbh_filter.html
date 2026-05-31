@@ -13,7 +13,7 @@ them from distorting the trend."><meta property="og:image" content="https://mich
 
     <a class="navbar-brand me-2" href="../index.html">MacroFilters</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,7 +27,9 @@ them from distorting the trend."><meta property="og:image" content="https://mich
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/introduction.html">Introduction to MacroFilters</a></li>
     <li><a class="dropdown-item" href="../articles/real_time_revisions.html">Solving the End-Point Problem in Real-Time</a></li>
     <li><a class="dropdown-item" href="../articles/tuning_mbh.html">Hyperparameter Tuning for the MacroBoost Hybrid Filter</a></li>
+    <li><a class="dropdown-item" href="../articles/uncertainty_bands.html">Uncertainty Bands via Block Bootstrap</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/michal0091/MacroFilters/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -54,13 +56,16 @@ them from distorting the trend.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">mbh_filter</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
+<span>  d <span class="op">=</span> <span class="st">"auto"</span>,</span>
+<span>  boot_iter <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  block_size <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  knots <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mstop <span class="op">=</span> <span class="fl">500L</span>,</span>
-<span>  d <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  nu <span class="op">=</span> <span class="fl">0.1</span>,</span>
 <span>  df <span class="op">=</span> <span class="fl">4L</span>,</span>
 <span>  select_mstop <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  boundary.knots <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  boundary.knots <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  hp_lambda <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -70,6 +75,36 @@ them from distorting the trend.</p>
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>Numeric vector, <code>ts</code>, <code>xts</code>, or <code>zoo</code> object.</p></dd>
+
+
+<dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
+<dd><p>Numeric or <code>"auto"</code>.
+The delta parameter for Huber loss. If <code>"auto"</code> (default), it is
+calibrated as <code>stats::mad(.hp_fast(x))</code>, i.e. the MAD of the HP cyclical
+residual. This anchors the threshold to the output-gap scale rather than
+the growth-rate scale, avoiding the under-truncation failure mode of the
+legacy <code>mad(diff(y))</code> heuristic. A <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code> is emitted reporting the
+exact value chosen. Supply an explicit positive numeric to override.</p></dd>
+
+
+<dt id="arg-boot-iter">boot_iter<a class="anchor" aria-label="anchor" href="#arg-boot-iter"></a></dt>
+<dd><p>Non-negative integer.
+Number of block-bootstrap iterations for uncertainty quantification
+(default <code>0</code>, bootstrap disabled). When <code>&gt; 0</code>, the function adds
+<code>$trend_lower</code> and <code>$trend_upper</code>: a 95% normal-approximation band,
+<code>trend +/- 1.96 * sd(bootstrap trends)</code>, centred on the estimated trend.
+The bootstrap sd is used instead of empirical percentiles because it is
+smooth and stable at practical <code>boot_iter</code>. Each bootstrap refit uses the
+same <code>mstop</code> as the base fit, so larger <code>boot_iter</code> raises cost linearly.
+See also <code>block_size</code>.</p></dd>
+
+
+<dt id="arg-block-size">block_size<a class="anchor" aria-label="anchor" href="#arg-block-size"></a></dt>
+<dd><p>Positive integer or <code>"auto"</code>.
+Block length for the moving-block bootstrap (used only when
+<code>boot_iter &gt; 0</code>). If <code>"auto"</code> (default), it is set to
+<code>2 * stats::frequency(x)</code> (two full cycles), bounded above by
+<code>floor(length(x) / 3)</code> to keep at least three blocks.</p></dd>
 
 
 <dt id="arg-knots">knots<a class="anchor" aria-label="anchor" href="#arg-knots"></a></dt>
@@ -83,26 +118,16 @@ High knot density is required for the trend to be flexible enough.</p></dd>
 <dd><p>Integer.
 Maximum number of boosting iterations (default 500).
 If <code>select_mstop = TRUE</code> this is the upper bound; the actual stopping
-point is chosen by AICc.</p></dd>
-
-
-<dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
-<dd><p>Numeric or <code>NULL</code>.
-The delta parameter for Huber loss. If <code>NULL</code> (default), it is
-auto-calibrated as the Median Absolute Deviation (MAD) of the first
-differences of the series (<code>mad(diff(y))</code>).</p>
-<p><strong>Scale-mismatch warning:</strong> When <code>x</code> is a log-level series,
-<code>diff(y)</code> returns inter-period growth rates (typical scale 0.001–0.02),
-whereas the output gap (the residual the filter must explain) has a much
-larger scale (typical scale 0.01–0.05). Using <code>mad(diff(y))</code> as <code>d</code>
-therefore sets the Huber threshold far too low: the filter treats normal
-business-cycle oscillations as outliers, truncates their gradients, and
-blocks learning. The trend becomes over-smooth and the cycle absorbs
-too much long-run variance.</p>
-<p><strong>Recommendation:</strong> For a quick preliminary calibration use
-<code>d = mad(hp_filter(x)$cycle)</code>, which sets the threshold on the residual
-scale. Supply an explicit numeric value to override the automatic
-fallback entirely.</p></dd>
+point is chosen by AICc.</p>
+<p><strong>Under-smoothing warning (<code>mstop</code> vs <code>d</code>):</strong> when <code>d</code> is small relative
+to the trend's range – the typical case for long log-level series, where
+the cycle (hence the auto-calibrated <code>d</code>) is tiny but the trend spans a
+large range – the Huber loss caps the gradient from the first iteration,
+so each boosting step advances the trend only slightly. Reducing <code>mstop</code>
+then leaves the trend unable to climb its full range: it collapses to a
+nearly flat curve while the cycle absorbs the long-run variation. Keep the
+default <code>mstop = 500</code> (or higher) for such series; lower it only for short
+or high-cycle-variance inputs.</p></dd>
 
 
 <dt id="arg-nu">nu<a class="anchor" aria-label="anchor" href="#arg-nu"></a></dt>
@@ -146,13 +171,38 @@ domain for the B-spline basis (e.g., <code>c(1, T_max)</code>). If <code>NULL</c
 the range of <code>time_idx</code> is used. For real-time stability, fix this to the
 full-sample domain so the basis does not shift as the sample grows.</p></dd>
 
+
+<dt id="arg-hp-lambda">hp_lambda<a class="anchor" aria-label="anchor" href="#arg-hp-lambda"></a></dt>
+<dd><p>Numeric or <code>NULL</code>.
+Smoothing parameter for the internal HP filter used to auto-calibrate
+<code>d</code> (only relevant when <code>d = "auto"</code>). If <code>NULL</code> (default), it is derived
+from <code>stats::frequency(x)</code> via the Ravn-Uhlig rule. <strong>Supply this when
+<code>x</code> is a plain numeric vector whose true frequency is not annual</strong>, since
+<code><a href="https://rdrr.io/r/stats/time.html" class="external-link">frequency()</a></code> returns <code>1</code> for unclassed vectors and would otherwise
+under-smooth the calibration cycle (e.g. monthly data: <code>hp_lambda = 129600</code>).</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>macrofilter</code> object with <code>trend</code>, <code>cycle</code>, <code>data</code>, and <code>meta</code>
-components.  The <code>meta</code> list contains <code>method = "MBH"</code>, <code>knots</code>, <code>d</code>,
-<code>mstop</code>, <code>nu</code>, <code>df</code>, <code>select_mstop</code>, and <code>compute_time</code>.</p>
-    </div>
+    <p>A list of class <code>c("macrofilter", "list")</code> with:</p><dl><dt><code>$trend</code></dt>
+<dd><p>Numeric trend vector.</p></dd>
+
+<dt><code>$cycle</code></dt>
+<dd><p>Numeric cycle vector.</p></dd>
+
+<dt><code>$data</code></dt>
+<dd><p>Original input as numeric.</p></dd>
+
+<dt><code>$meta</code></dt>
+<dd><p>Named list: <code>method</code>, <code>knots</code>, <code>d</code>, <code>mstop</code>, <code>nu</code>,
+<code>df</code>, <code>select_mstop</code>, <code>compute_time</code>.</p></dd>
+
+<dt><code>$trend_lower</code>, <code>$trend_upper</code></dt>
+<dd><p>95% normal-approximation bootstrap
+band (<code>trend +/- 1.96 * sd</code>). Present only when <code>boot_iter &gt; 0</code>.</p></dd>
+
+
+</dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The model estimated is an additive model:
@@ -200,23 +250,25 @@ observations. Keep <code>df = 4</code> (the default) for real-time applications.
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/ts.html" class="external-link">ts</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">80</span><span class="op">)</span><span class="op">)</span>, start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2000</span>, <span class="fl">1</span><span class="op">)</span>, frequency <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">mbh_filter</span><span class="op">(</span><span class="va">y</span>, mstop <span class="op">=</span> <span class="fl">100L</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Info: Huber threshold automatically calibrated to d = 1.627402 via HP cyclical MAD.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> -- MacroFilter [MBH] --</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Observations : 80</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Parameters   : knots = 40, d = 0.9356, mstop = 100, mstop_initial = 100, nu = 0.1, df = 4, select_mstop = FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Cycle range  : [-2.445, 5.094]  sd = 1.643</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.031 s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Parameters   : knots = 40, d = 1.627, mstop = 100, mstop_initial = 100, nu = 0.1, df = 4, select_mstop = FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Cycle range  : [-2.66, 4.533]  sd = 1.518</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.026 s</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># Full example with default parameters</span></span></span>
 <span class="r-in"><span><span class="va">y2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/ts.html" class="external-link">ts</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">200</span><span class="op">)</span><span class="op">)</span>, start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2000</span>, <span class="fl">1</span><span class="op">)</span>, frequency <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">result2</span> <span class="op">&lt;-</span> <span class="fu">mbh_filter</span><span class="op">(</span><span class="va">y2</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Info: Huber threshold automatically calibrated to d = 1.161531 via HP cyclical MAD.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result2</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> -- MacroFilter [MBH] --</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Observations : 200</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Parameters   : knots = 100, d = 0.9282, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Cycle range  : [-4.004, 3.762]  sd = 1.463</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.145 s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Parameters   : knots = 100, d = 1.162, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Cycle range  : [-4.077, 3.726]  sd = 1.419</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.143 s</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

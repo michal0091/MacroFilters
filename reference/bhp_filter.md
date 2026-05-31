@@ -16,7 +16,9 @@ bhp_filter(
   iter_max = 100L,
   stopping = c("bic", "adf", "fixed"),
   sig_level = 0.05,
-  freq = NULL
+  freq = NULL,
+  boot_iter = 0,
+  block_size = "auto"
 )
 ```
 
@@ -50,11 +52,33 @@ bhp_filter(
   Used only when `lambda` is `NULL` and the frequency cannot be inferred
   from `x`.
 
+- boot_iter:
+
+  Non-negative integer. Number of block-bootstrap iterations for
+  uncertainty quantification (default `0`, bootstrap disabled). When
+  `> 0`, the function adds `$trend_lower` and `$trend_upper`: a 95%
+  normal-approximation band, `trend +/- 1.96 * sd(bootstrap trends)`,
+  centred on the estimated trend. The bootstrap sd is used instead of
+  empirical percentiles because it is smooth and stable at practical
+  `boot_iter`. Each bootstrap refit uses the same `mstop` as the base
+  fit, so larger `boot_iter` raises cost linearly. See also
+  `block_size`.
+
+- block_size:
+
+  Positive integer or `"auto"`. Block length for the moving-block
+  bootstrap (used only when `boot_iter > 0`). If `"auto"` (default), it
+  is set to `2 * stats::frequency(x)` (two full cycles), bounded above
+  by `floor(length(x) / 3)` to keep at least three blocks.
+
 ## Value
 
-A `macrofilter` object with `trend`, `cycle`, `data`, and `meta`
-components. The `meta` list contains `method = "bHP"`, `lambda`,
-`iterations`, `stopping_rule`, and `compute_time`.
+A list of class `c("macrofilter", "list")` with `trend`, `cycle`,
+`data`, and `meta` (`method = "bHP"`, `lambda`, `iterations`,
+`stopping_rule`, `compute_time`). When `boot_iter > 0` it also carries
+`trend_lower` and `trend_upper` (95% normal-approximation bootstrap
+band); each bootstrap refit runs a *fixed* `iterations` passes,
+conditioning on the complexity selected by the base fit.
 
 ## Details
 
@@ -93,6 +117,6 @@ print(result)
 #> -- MacroFilter [bHP] --
 #>    Observations : 200
 #>    Parameters   : lambda = 1600, iterations = 100, stopping_rule = bic
-#>    Cycle range  : [-1.713, 1.66]  sd = 0.6829
-#>    Compute time : 0.008 s
+#>    Cycle range  : [-1.657, 1.673]  sd = 0.6962
+#>    Compute time : 0.006 s
 ```

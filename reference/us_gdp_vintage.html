@@ -11,7 +11,7 @@ of chained 2017 US dollars, seasonally adjusted annual rate."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">MacroFilters</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,7 +25,9 @@ of chained 2017 US dollars, seasonally adjusted annual rate."><meta property="og
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/introduction.html">Introduction to MacroFilters</a></li>
     <li><a class="dropdown-item" href="../articles/real_time_revisions.html">Solving the End-Point Problem in Real-Time</a></li>
     <li><a class="dropdown-item" href="../articles/tuning_mbh.html">Hyperparameter Tuning for the MacroBoost Hybrid Filter</a></li>
+    <li><a class="dropdown-item" href="../articles/uncertainty_bands.html">Uncertainty Bands via Block Bootstrap</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/michal0091/MacroFilters/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -88,13 +90,14 @@ $$\Delta \log(\text{GDP}_t) \approx g_t$$</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"us_gdp_vintage"</span>, package <span class="op">=</span> <span class="st">"MacroFilters"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">us_gdp_vintage</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         date gdp_real  gdp_log</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 1947-01-01 2182.681 7.688309</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 1947-04-01 2176.892 7.685653</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 1947-07-01 2172.432 7.683603</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 1947-10-01 2206.452 7.699141</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 1948-01-01 2239.682 7.714089</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 1948-04-01 2276.690 7.730478</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          date gdp_real  gdp_log</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        &lt;Date&gt;    &lt;num&gt;    &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1: 1947-01-01 2182.681 7.688309</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2: 1947-04-01 2176.892 7.685653</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3: 1947-07-01 2172.432 7.683603</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4: 1947-10-01 2206.452 7.699141</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5: 1948-01-01 2239.682 7.714089</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6: 1948-04-01 2276.690 7.730478</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">us_gdp_vintage</span><span class="op">$</span><span class="va">date</span>, <span class="va">us_gdp_vintage</span><span class="op">$</span><span class="va">gdp_log</span>,</span></span>
 <span class="r-in"><span>     type <span class="op">=</span> <span class="st">"l"</span>, xlab <span class="op">=</span> <span class="st">"Date"</span>, ylab <span class="op">=</span> <span class="st">"Log Real GDP"</span>,</span></span>
 <span class="r-in"><span>     main <span class="op">=</span> <span class="st">"US Real GDP (log level)"</span><span class="op">)</span></span></span>

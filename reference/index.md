@@ -2,6 +2,8 @@
 
 ## All functions
 
+- [`autoplot(`*`<macrofilter>`*`)`](https://michal0091.github.io/MacroFilters/reference/autoplot.macrofilter.md)
+  : Plot a macrofilter decomposition with ggplot2
 - [`bhp_filter()`](https://michal0091.github.io/MacroFilters/reference/bhp_filter.md)
   : Boosted HP Filter
 - [`es_gdp`](https://michal0091.github.io/MacroFilters/reference/es_gdp.md)

@@ -7,8 +7,11 @@
 <url><loc>https://michal0091.github.io/MacroFilters/articles/introduction.html</loc></url>
 <url><loc>https://michal0091.github.io/MacroFilters/articles/real_time_revisions.html</loc></url>
 <url><loc>https://michal0091.github.io/MacroFilters/articles/tuning_mbh.html</loc></url>
+<url><loc>https://michal0091.github.io/MacroFilters/articles/uncertainty_bands.html</loc></url>
 <url><loc>https://michal0091.github.io/MacroFilters/authors.html</loc></url>
 <url><loc>https://michal0091.github.io/MacroFilters/index.html</loc></url>
+<url><loc>https://michal0091.github.io/MacroFilters/news/index.html</loc></url>
+<url><loc>https://michal0091.github.io/MacroFilters/reference/autoplot.macrofilter.html</loc></url>
 <url><loc>https://michal0091.github.io/MacroFilters/reference/bhp_filter.html</loc></url>
 <url><loc>https://michal0091.github.io/MacroFilters/reference/es_gdp.html</loc></url>
 <url><loc>https://michal0091.github.io/MacroFilters/reference/fr_gdp.html</loc></url>
@@ -16,6 +19,7 @@
 <url><loc>https://michal0091.github.io/MacroFilters/reference/hp_filter.html</loc></url>
 <url><loc>https://michal0091.github.io/MacroFilters/reference/index.html</loc></url>
 <url><loc>https://michal0091.github.io/MacroFilters/reference/mbh_filter.html</loc></url>
+<url><loc>https://michal0091.github.io/MacroFilters/reference/reexports.html</loc></url>
 <url><loc>https://michal0091.github.io/MacroFilters/reference/us_gdp_vintage.html</loc></url>
 </urlset>
 

@@ -49,13 +49,14 @@ percentage growth rates: \$\$\Delta \log(\text{GDP}\_t) \approx g_t\$\$
 ``` r
 data("us_gdp_vintage", package = "MacroFilters")
 head(us_gdp_vintage)
-#>         date gdp_real  gdp_log
-#> 1 1947-01-01 2182.681 7.688309
-#> 2 1947-04-01 2176.892 7.685653
-#> 3 1947-07-01 2172.432 7.683603
-#> 4 1947-10-01 2206.452 7.699141
-#> 5 1948-01-01 2239.682 7.714089
-#> 6 1948-04-01 2276.690 7.730478
+#>          date gdp_real  gdp_log
+#>        <Date>    <num>    <num>
+#> 1: 1947-01-01 2182.681 7.688309
+#> 2: 1947-04-01 2176.892 7.685653
+#> 3: 1947-07-01 2172.432 7.683603
+#> 4: 1947-10-01 2206.452 7.699141
+#> 5: 1948-01-01 2239.682 7.714089
+#> 6: 1948-04-01 2276.690 7.730478
 plot(us_gdp_vintage$date, us_gdp_vintage$gdp_log,
      type = "l", xlab = "Date", ylab = "Log Real GDP",
      main = "US Real GDP (log level)")
