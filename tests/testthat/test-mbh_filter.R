@@ -88,6 +88,13 @@ test_that("Auto-knots heuristic: n=100 gives knots = max(20, 50) = 50", {
   expect_equal(result$meta$knots, 50L)
 })
 
+test_that("Auto-knots heuristic caps at 250 for long series", {
+  set.seed(250)
+  y <- cumsum(rnorm(600))           # floor(600 / 2) = 300 -> capped to 250
+  result <- mbh_filter(y, mstop = 10L)
+  expect_equal(result$meta$knots, 250L)
+})
+
 test_that("Custom d parameter is stored correctly in meta", {
   set.seed(51)
   y <- cumsum(rnorm(100))

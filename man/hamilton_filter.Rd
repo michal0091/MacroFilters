@@ -56,7 +56,7 @@ The first \eqn{h + p - 1} observations have no computable trend or cycle
 and are filled with \code{NA}.
 
 The lag matrix is constructed vectorized via \code{embed()} and the
-regression is solved with \code{\link[stats:lmfit]{stats::lm.fit()}} for speed.
+regression is solved with \code{\link[stats:lm.fit]{stats::lm.fit()}} for speed.
 
 When \code{boot_iter > 0}, the confidence band comes from a residual bootstrap
 that holds the observed lead-in fixed (conditional on initial values) and

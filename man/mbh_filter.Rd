@@ -47,8 +47,12 @@ Block length for the moving-block bootstrap (used only when
 
 \item{knots}{Integer.
 Number of interior knots for the P-Spline.
-If \code{NULL} (default), it is calculated as \code{max(20, floor(n / 2))}.
-High knot density is required for the trend to be flexible enough.}
+If \code{NULL} (default), it is calculated as \code{min(max(20, floor(n / 2)), 250)}.
+High knot density keeps the trend flexible, while the cap of 250 keeps the
+B-spline basis bounded for long / high-frequency series: in a P-spline the
+smoothness is governed by the difference penalty (via \code{df}, \code{mstop}, \code{nu}),
+not by the knot count, so beyond a few hundred knots the extra basis
+columns only inflate memory and runtime without adding useful flexibility.}
 
 \item{mstop}{Integer.
 Maximum number of boosting iterations (default 500).
@@ -131,18 +135,18 @@ them from distorting the trend.
 The model estimated is an additive model:
 \deqn{y_t = \text{Linear}(t) + \text{Smooth}(t) + \epsilon_t}
 
-It is fitted using \code{\link[mboost:gamboost]{mboost::mboost()}} with:
+It is fitted using \code{\link[mboost:mboost]{mboost::mboost()}} with:
 \itemize{
-\item \strong{Base Learners:} A linear time trend (\code{\link[mboost:baselearners]{mboost::bols()}}) to capture
-the global path, plus a B-spline (\code{\link[mboost:baselearners]{mboost::bbs()}}) to capture local
+\item \strong{Base Learners:} A linear time trend (\code{\link[mboost:bols]{mboost::bols()}}) to capture
+the global path, plus a B-spline (\code{\link[mboost:bbs]{mboost::bbs()}}) to capture local
 curvature.
-\item \strong{Loss Function:} Huber loss (\code{\link[mboost:Family]{mboost::Huber()}}) with parameter
+\item \strong{Loss Function:} Huber loss (\code{\link[mboost:Huber]{mboost::Huber()}}) with parameter
 \code{d}.  This is the key to robustness.
 }
 
-The default parameters (\code{knots = n/2}, \code{mstop = 500}) are calibrated to
-mimic the flexibility of a standard HP filter while retaining the robustness
-of the Huber loss.
+The default parameters (\code{knots = min(n/2, 250)}, \code{mstop = 500}) are
+calibrated to mimic the flexibility of a standard HP filter while retaining
+the robustness of the Huber loss.
 }
 \section{Calibration Guidance}{
 

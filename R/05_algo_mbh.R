@@ -12,8 +12,12 @@
 #' @param x Numeric vector, `ts`, `xts`, or `zoo` object.
 #' @param knots Integer.
 #'   Number of interior knots for the P-Spline.
-#'   If `NULL` (default), it is calculated as `max(20, floor(n / 2))`.
-#'   High knot density is required for the trend to be flexible enough.
+#'   If `NULL` (default), it is calculated as `min(max(20, floor(n / 2)), 250)`.
+#'   High knot density keeps the trend flexible, while the cap of 250 keeps the
+#'   B-spline basis bounded for long / high-frequency series: in a P-spline the
+#'   smoothness is governed by the difference penalty (via `df`, `mstop`, `nu`),
+#'   not by the knot count, so beyond a few hundred knots the extra basis
+#'   columns only inflate memory and runtime without adding useful flexibility.
 #' @param mstop Integer.
 #'   Maximum number of boosting iterations (default 500).
 #'   If `select_mstop = TRUE` this is the upper bound; the actual stopping
@@ -102,9 +106,9 @@
 #'     `d`.  This is the key to robustness.
 #' }
 #'
-#' The default parameters (`knots = n/2`, `mstop = 500`) are calibrated to
-#' mimic the flexibility of a standard HP filter while retaining the robustness
-#' of the Huber loss.
+#' The default parameters (`knots = min(n/2, 250)`, `mstop = 500`) are
+#' calibrated to mimic the flexibility of a standard HP filter while retaining
+#' the robustness of the Huber loss.
 #'
 #' @section Calibration Guidance:
 #' Three failure modes were discovered through empirical stress-testing.
@@ -196,7 +200,7 @@ mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
   # High flexibility (~1 knot every 2 obs) because the Huber loss will be the
   # smoothness constraint, not the spline basis.
   if (is.null(knots)) {
-    knots <- max(20L, floor(n / 2L))
+    knots <- min(max(20L, floor(n / 2L)), 250L)
   }
   # Clamp knots to avoid singular spline bases with very short series
   max_knots <- max(1L, n - 4L)

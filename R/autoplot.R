@@ -21,7 +21,7 @@ ggplot2::autoplot
 #' @export
 #' @method autoplot macrofilter
 #' @importFrom ggplot2 ggplot aes geom_line geom_ribbon scale_color_manual
-#'   labs theme_minimal theme element_blank
+#' @importFrom ggplot2 labs theme_minimal theme element_blank
 #' @importFrom data.table data.table
 #'
 #' @examples

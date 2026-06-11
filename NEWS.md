@@ -1,3 +1,14 @@
+# MacroFilters 0.2.1
+
+## Other changes
+
+* `mbh_filter()`'s automatic knot heuristic is now capped at 250 interior
+  knots (`min(max(20, floor(n / 2)), 250)`). Series of length <= 500 are
+  unaffected; this only bounds the B-spline basis for long / high-frequency
+  inputs, where additional knots inflate memory and runtime without adding
+  useful flexibility (P-spline smoothness is governed by the penalty, not the
+  knot count).
+
 # MacroFilters 0.2.0
 
 ## New features
