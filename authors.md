@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/michal0091/MacroFilters/blob/v0.2.1/inst/CITATION)
+[`inst/CITATION`](https://github.com/michal0091/MacroFilters/blob/main/inst/CITATION)
 
 Kinel M (2026). *MacroFilters: Robust Trend-Cycle Decomposition for
 Macroeconomic Time Series*.

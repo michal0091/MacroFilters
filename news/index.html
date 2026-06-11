@@ -35,7 +35,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/michal0091/MacroFilters/blob/v0.2.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/michal0091/MacroFilters/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
@@ -43,7 +43,12 @@
 <div class="section level3">
 <h3 id="other-changes-0-2-1">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-2-1"></a></h3>
 <ul><li>
-<code><a href="../reference/mbh_filter.html">mbh_filter()</a></code>’s automatic knot heuristic is now capped at 250 interior knots (<code>min(max(20, floor(n / 2)), 250)</code>). Series of length &lt;= 500 are unaffected; this only bounds the B-spline basis for long / high-frequency inputs, where additional knots inflate memory and runtime without adding useful flexibility (P-spline smoothness is governed by the penalty, not the knot count).</li>
+<code><a href="../reference/mbh_filter.html">mbh_filter()</a></code>’s automatic knot count is now capped at 250 (<code>min(max(20, floor(n / 2)), 250)</code>). Series of 500 observations or fewer are unaffected; the cap only bounds the B-spline basis for long or high-frequency inputs, where extra knots inflate memory and runtime without adding flexibility (in a P-spline the difference penalty, not the knot count, controls smoothness).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-2-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-2-1"></a></h3>
+<ul><li>Corrected the MBH parameter tables in the <em>Introduction</em> vignette: the <code>d = "auto"</code> default is calibrated from the MAD of the HP cyclical residual (not first differences), and the default learning rate is <code>nu = 0.1</code>.</li>
+<li>Fixed the COVID-19 highlight in the <em>Introduction</em> cycle plot, which was anchored to stale fixed indices instead of the 2020 date window.</li>
 </ul></div>
 </div>
     <div class="section level2">

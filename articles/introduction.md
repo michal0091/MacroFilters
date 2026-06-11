@@ -340,7 +340,7 @@ mbh_res
 #>    Observations : 105
 #>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
-#>    Compute time : 0.095 s
+#>    Compute time : 0.112 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -377,7 +377,7 @@ mbh_res
 #>    Observations : 105
 #>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
-#>    Compute time : 0.095 s
+#>    Compute time : 0.112 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -414,7 +414,7 @@ str(mbh_res$meta)
 #>  $ df            : int 4
 #>  $ select_mstop  : logi FALSE
 #>  $ boundary.knots: NULL
-#>  $ compute_time  : num 0.095
+#>  $ compute_time  : num 0.112
 #>  $ ts_class      : chr "ts"
 #>  $ tsp           : num [1:3] 2000 2026 4
 #>  $ idx           : NULL
