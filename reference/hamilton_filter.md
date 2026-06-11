@@ -97,5 +97,5 @@ print(result)
 #>    Observations : 200
 #>    Parameters   : h = 8, p = 4
 #>    Cycle range  : [-6.344, 4.538]  sd = 2.119
-#>    Compute time : 0.001 s
+#>    Compute time : 0.000 s
 ```

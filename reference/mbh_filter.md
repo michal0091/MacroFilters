@@ -239,6 +239,6 @@ print(result2)
 #>    Observations : 200
 #>    Parameters   : knots = 100, d = 1.162, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-4.077, 3.726]  sd = 1.419
-#>    Compute time : 0.129 s
+#>    Compute time : 0.124 s
 # }
 ```
