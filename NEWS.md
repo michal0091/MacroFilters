@@ -2,12 +2,20 @@
 
 ## Other changes
 
-* `mbh_filter()`'s automatic knot heuristic is now capped at 250 interior
-  knots (`min(max(20, floor(n / 2)), 250)`). Series of length <= 500 are
-  unaffected; this only bounds the B-spline basis for long / high-frequency
-  inputs, where additional knots inflate memory and runtime without adding
-  useful flexibility (P-spline smoothness is governed by the penalty, not the
-  knot count).
+* `mbh_filter()`'s automatic knot count is now capped at 250
+  (`min(max(20, floor(n / 2)), 250)`). Series of 500 observations or fewer are
+  unaffected; the cap only bounds the B-spline basis for long or high-frequency
+  inputs, where extra knots inflate memory and runtime without adding
+  flexibility (in a P-spline the difference penalty, not the knot count,
+  controls smoothness).
+
+## Documentation
+
+* Corrected the MBH parameter tables in the *Introduction* vignette: the
+  `d = "auto"` default is calibrated from the MAD of the HP cyclical residual
+  (not first differences), and the default learning rate is `nu = 0.1`.
+* Fixed the COVID-19 highlight in the *Introduction* cycle plot, which was
+  anchored to stale fixed indices instead of the 2020 date window.
 
 # MacroFilters 0.2.0
 
