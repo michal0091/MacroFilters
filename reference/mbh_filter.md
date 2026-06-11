@@ -62,8 +62,13 @@ mbh_filter(
 - knots:
 
   Integer. Number of interior knots for the P-Spline. If `NULL`
-  (default), it is calculated as `max(20, floor(n / 2))`. High knot
-  density is required for the trend to be flexible enough.
+  (default), it is calculated as `min(max(20, floor(n / 2)), 250)`. High
+  knot density keeps the trend flexible, while the cap of 250 keeps the
+  B-spline basis bounded for long / high-frequency series: in a P-spline
+  the smoothness is governed by the difference penalty (via `df`,
+  `mstop`, `nu`), not by the knot count, so beyond a few hundred knots
+  the extra basis columns only inflate memory and runtime without adding
+  useful flexibility.
 
 - mstop:
 
@@ -178,9 +183,9 @@ It is fitted using
   ([`mboost::Huber()`](https://rdrr.io/pkg/mboost/man/Family.html)) with
   parameter `d`. This is the key to robustness.
 
-The default parameters (`knots = n/2`, `mstop = 500`) are calibrated to
-mimic the flexibility of a standard HP filter while retaining the
-robustness of the Huber loss.
+The default parameters (`knots = min(n/2, 250)`, `mstop = 500`) are
+calibrated to mimic the flexibility of a standard HP filter while
+retaining the robustness of the Huber loss.
 
 ## Calibration Guidance
 
@@ -222,7 +227,7 @@ print(result)
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 1.627, mstop = 100, mstop_initial = 100, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-2.66, 4.533]  sd = 1.518
-#>    Compute time : 0.026 s
+#>    Compute time : 0.023 s
 
 # \donttest{
 # Full example with default parameters
@@ -234,6 +239,6 @@ print(result2)
 #>    Observations : 200
 #>    Parameters   : knots = 100, d = 1.162, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-4.077, 3.726]  sd = 1.419
-#>    Compute time : 0.142 s
+#>    Compute time : 0.129 s
 # }
 ```

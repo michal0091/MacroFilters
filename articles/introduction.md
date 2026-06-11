@@ -256,26 +256,29 @@ The trend is decomposed into two additive base learners fitted via
   a cubic P-spline with `knots` interior knots that captures smooth
   nonlinear curvature.
 
-The default `knots = max(20, floor(n/2))` is deliberately generous — it
-gives the spline enough flexibility to follow genuine low-frequency
-movements without overfitting, while the Huber loss ensures that
-shock-contaminated quarters are downweighted.
+The default `knots = min(max(20, floor(n/2)), 250)` is deliberately
+generous — it gives the spline enough flexibility to follow genuine
+low-frequency movements without overfitting, while the Huber loss
+ensures that shock-contaminated quarters are downweighted. The cap of
+250 keeps the basis bounded on long / high-frequency series, where extra
+knots add cost but not flexibility (the penalty, not the knot count,
+governs smoothness).
 
 ### Parameters
 
 | Parameter | Default | Role |
 |----|----|----|
-| `knots` | `max(20, n/2)` | P-spline flexibility — higher = more local adaptability |
+| `knots` | `min(max(20, n/2), 250)` | P-spline flexibility — higher = more local adaptability (capped at 250) |
 | `mstop` | `500` | Boosting iterations — more = finer approximation |
-| `d` | `NULL (Auto)` | Huber delta — if `NULL`, auto-set via MAD of first differences (scale-invariant) |
-| `nu` | `0.2` | Shrinkage / learning rate — controls step size per iteration |
+| `d` | `"auto"` | Huber delta — if `"auto"`, calibrated via the MAD of the HP cyclical residual (output-gap scale) |
+| `nu` | `0.1` | Shrinkage / learning rate — controls step size per iteration |
 | `boundary.knots` | `NULL` | B-spline domain anchor — if `NULL`, uses `range(time_idx)`; fix to `c(1, T_max)` for real-time vintage stability |
 
-By default, `d` is auto-calibrated using the MAD of the series’ first
-differences, making the filter scale-invariant and suitable for both
-log-differenced and level series. You can override it with an explicit
-numeric value: `d = 0.01` is typical for growth rates, while `d = 5` to
-`d = 20` may be needed for index-level series.
+By default, `d` is auto-calibrated as the MAD of the HP cyclical
+residual, anchoring the Huber threshold to the output-gap
+(business-cycle) scale rather than the growth-rate scale. You can
+override it with an explicit numeric value: `d = 0.01` is typical for
+growth rates, while larger values suit index-level series.
 
 For real-time applications where the sample grows one period at a time,
 set `boundary.knots = c(1, T_max)` to anchor the B-spline domain to the
@@ -337,7 +340,7 @@ mbh_res
 #>    Observations : 105
 #>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
-#>    Compute time : 0.118 s
+#>    Compute time : 0.095 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -374,7 +377,7 @@ mbh_res
 #>    Observations : 105
 #>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
 #>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
-#>    Compute time : 0.118 s
+#>    Compute time : 0.095 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -411,7 +414,7 @@ str(mbh_res$meta)
 #>  $ df            : int 4
 #>  $ select_mstop  : logi FALSE
 #>  $ boundary.knots: NULL
-#>  $ compute_time  : num 0.118
+#>  $ compute_time  : num 0.095
 #>  $ ts_class      : chr "ts"
 #>  $ tsp           : num [1:3] 2000 2026 4
 #>  $ idx           : NULL
@@ -436,7 +439,7 @@ ggplot(df_cycle, aes(x = t)) +
   geom_line(aes(y = HP_cycle,  colour = "HP cycle"),  linewidth = 0.8) +
   geom_line(aes(y = MBH_cycle, colour = "MBH cycle"), linewidth = 0.8) +
   annotate("rect",
-           xmin = df_cycle$t[59], xmax = df_cycle$t[63],
+           xmin = 2020.00, xmax = 2020.75,
            ymin = -Inf, ymax = Inf,
            alpha = 0.12, fill = "firebrick") +
   scale_colour_manual(values = c("HP cycle" = "#0072B2", "MBH cycle" = "#E69F00")) +

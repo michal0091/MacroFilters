@@ -6,11 +6,11 @@
 exposes three knobs that jointly govern fit quality, robustness, and
 computation time.
 
-| Parameter | Default               | Role                               |
-|-----------|-----------------------|------------------------------------|
-| `mstop`   | `500`                 | Gradient-descent iteration budget  |
-| `nu`      | `0.1`                 | Per-step shrinkage (learning rate) |
-| `knots`   | `max(20, floor(n/2))` | P-spline interior knot count       |
+| Parameter | Default | Role |
+|----|----|----|
+| `mstop` | `500` | Gradient-descent iteration budget |
+| `nu` | `0.1` | Per-step shrinkage (learning rate) |
+| `knots` | `min(max(20, floor(n/2)), 250)` | P-spline interior knot count (capped at 250) |
 
 ### 1.1 `mstop` — iteration budget
 
@@ -50,9 +50,10 @@ cat(sprintf("Max trend difference (mstop×nu equivalence): %.2e\n", max_diff))
 ### 1.3 `knots` — spline flexibility
 
 Knots control how many local basis functions the P-spline uses to
-represent the trend shape. The default heuristic `max(20, floor(n/2))`
-provides roughly one knot per two observations — high density relative
-to classical smoothing spline recommendations — because Huber loss (not
+represent the trend shape. The default heuristic
+`min(max(20, floor(n/2)), 250)` provides roughly one knot per two
+observations (capped at 250 for long series) — high density relative to
+classical smoothing spline recommendations — because Huber loss (not
 spline regularity) acts as the primary smoothness constraint.
 
 Too few knots force an overly rigid polynomial-like trend; too many
@@ -260,16 +261,16 @@ knitr::kable(
 
 | mstop | Wall time (s) | Cycle SD |
 |------:|--------------:|---------:|
-|   100 |         0.044 | 0.663846 |
-|   200 |         0.068 | 0.625541 |
-|   300 |         0.093 | 0.587335 |
-|   400 |         0.125 | 0.549249 |
-|   500 |         0.141 | 0.511309 |
-|   600 |         0.157 | 0.473548 |
-|   700 |         0.180 | 0.436016 |
-|   800 |         0.196 | 0.398778 |
-|   900 |         0.212 | 0.361931 |
-|  1000 |         0.229 | 0.325643 |
+|   100 |         0.040 | 0.663846 |
+|   200 |         0.061 | 0.625541 |
+|   300 |         0.081 | 0.587335 |
+|   400 |         0.111 | 0.549249 |
+|   500 |         0.128 | 0.511309 |
+|   600 |         0.142 | 0.473548 |
+|   700 |         0.163 | 0.436016 |
+|   800 |         0.176 | 0.398778 |
+|   900 |         0.190 | 0.361931 |
+|  1000 |         0.204 | 0.325643 |
 
 MBH computational benchmark — US log GDP (316 obs) {.table}
 
@@ -336,7 +337,7 @@ prohibitively slow.
 |:---|:---|:---|:---|
 | `mstop` | 500 | Publication accuracy required | Exploratory / fast iteration |
 | `nu` | 0.1 | Very long series; computational budget tight | Stability preferred over speed |
-| `knots` | `max(20, n/2)` | Highly nonlinear trend | Short series or near-linear trend |
+| `knots` | `min(max(20, n/2), 250)` | Highly nonlinear trend | Short series or near-linear trend |
 | `d` | auto via MAD | Series has frequent large spikes | Series is log-level (use `mad(hp$cycle)` instead) |
 
 MBH hyperparameter quick-reference {.table}

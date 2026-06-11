@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">MacroFilters</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,9 +134,9 @@ not drift upward to correct an inflated initial under-estimate.</p></li>
 <li><p><strong>Frozen B-spline domain</strong> —
 <code>knots = 50L</code> and <code>boundary.knots = c(1, T_max)</code>
 are computed once so every vintage uses an identical basis. Without
-this, the default formula <code>max(20, floor(n/2))</code> increases the
-knot count as <code>n</code> grows, giving later vintages progressively
-more spectral flexibility.</p></li>
+this, the default formula <code>min(max(20, floor(n/2)), 250)</code>
+increases the knot count as <code>n</code> grows (up to the cap of 250),
+giving later vintages progressively more spectral flexibility.</p></li>
 </ol>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">T_max</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">us_gdp_vintage</span><span class="op">)</span>   <span class="co"># full-sample size (computed from the data)</span></span>

@@ -13,7 +13,7 @@ them from distorting the trend."><meta property="og:image" content="https://mich
 
     <a class="navbar-brand me-2" href="../index.html">MacroFilters</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,8 +110,12 @@ Block length for the moving-block bootstrap (used only when
 <dt id="arg-knots">knots<a class="anchor" aria-label="anchor" href="#arg-knots"></a></dt>
 <dd><p>Integer.
 Number of interior knots for the P-Spline.
-If <code>NULL</code> (default), it is calculated as <code>max(20, floor(n / 2))</code>.
-High knot density is required for the trend to be flexible enough.</p></dd>
+If <code>NULL</code> (default), it is calculated as <code>min(max(20, floor(n / 2)), 250)</code>.
+High knot density keeps the trend flexible, while the cap of 250 keeps the
+B-spline basis bounded for long / high-frequency series: in a P-spline the
+smoothness is governed by the difference penalty (via <code>df</code>, <code>mstop</code>, <code>nu</code>),
+not by the knot count, so beyond a few hundred knots the extra basis
+columns only inflate memory and runtime without adding useful flexibility.</p></dd>
 
 
 <dt id="arg-mstop">mstop<a class="anchor" aria-label="anchor" href="#arg-mstop"></a></dt>
@@ -212,9 +216,9 @@ the global path, plus a B-spline (<code><a href="https://rdrr.io/pkg/mboost/man/
 curvature.</p></li>
 <li><p><strong>Loss Function:</strong> Huber loss (<code><a href="https://rdrr.io/pkg/mboost/man/Family.html" class="external-link">mboost::Huber()</a></code>) with parameter
 <code>d</code>.  This is the key to robustness.</p></li>
-</ul><p>The default parameters (<code>knots = n/2</code>, <code>mstop = 500</code>) are calibrated to
-mimic the flexibility of a standard HP filter while retaining the robustness
-of the Huber loss.</p>
+</ul><p>The default parameters (<code>knots = min(n/2, 250)</code>, <code>mstop = 500</code>) are
+calibrated to mimic the flexibility of a standard HP filter while retaining
+the robustness of the Huber loss.</p>
     </div>
     <div class="section level2">
     <h2 id="calibration-guidance">Calibration Guidance<a class="anchor" aria-label="anchor" href="#calibration-guidance"></a></h2>
@@ -256,7 +260,7 @@ observations. Keep <code>df = 4</code> (the default) for real-time applications.
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Observations : 80</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Parameters   : knots = 40, d = 1.627, mstop = 100, mstop_initial = 100, nu = 0.1, df = 4, select_mstop = FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Cycle range  : [-2.66, 4.533]  sd = 1.518</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.026 s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.023 s</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># Full example with default parameters</span></span></span>
@@ -268,7 +272,7 @@ observations. Keep <code>df = 4</code> (the default) for real-time applications.
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Observations : 200</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Parameters   : knots = 100, d = 1.162, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Cycle range  : [-4.077, 3.726]  sd = 1.419</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.142 s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Compute time : 0.129 s</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

@@ -64,8 +64,9 @@ a distinct failure mode:
 3.  **Frozen B-spline domain** — `knots = 50L` and
     `boundary.knots = c(1, T_max)` are computed once so every vintage
     uses an identical basis. Without this, the default formula
-    `max(20, floor(n/2))` increases the knot count as `n` grows, giving
-    later vintages progressively more spectral flexibility.
+    `min(max(20, floor(n/2)), 250)` increases the knot count as `n`
+    grows (up to the cap of 250), giving later vintages progressively
+    more spectral flexibility.
 
 ``` r
 
