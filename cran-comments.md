@@ -1,32 +1,33 @@
+## Submission
+
+This is a maintenance update of MacroFilters, from 0.1.0 (the current CRAN
+version) to 0.2.1. The main user-visible change bounds the automatic knot
+count of `mbh_filter()` to keep the B-spline basis from growing without limit
+on long / high-frequency series; quarterly macro series are unaffected. See
+NEWS.md for the full list. (Version 0.2.0 was a GitHub-only development release
+and was not submitted to CRAN.)
+
 ## Test environments
 
-* local Ubuntu 24.04 (WSL2), R 4.5.1
-* win-builder R-devel (2026-05-20): 0 errors | 0 warnings | 1 note
+* local: Ubuntu 24.04 (WSL2), R 4.6.0
+* win-builder: R-devel (2026-06-09 r90126 ucrt) and R-release (4.6.0) — Status: OK
+* R-hub v2 (GitHub Actions):
+  - linux, R-devel (2026-06-09 r90126), Ubuntu 24.04 — Status: OK
+  - windows, R-devel (2026-06-09 r90126 ucrt), Windows Server 2022 — Status: OK
+  - macos-arm64, R-devel (2026-05-03 r89994), macOS Sequoia 15.7 (aarch64) — Status: OK
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 0 notes
 
-### Note — CRAN incoming feasibility (expected for new submission)
+on every environment listed above.
 
-```
-New submission
+## Notes
 
-Possibly misspelled words in DESCRIPTION:
-  AICc (15:67), Hodrick (11:5), Kinel (16:55), MBH (9:61), MacroBoost (9:42)
-```
+CRAN's incoming check may flag the following domain-specific terms in
+DESCRIPTION as possibly misspelled — all are correct and are listed in
+`inst/WORDLIST`: AICc, Hodrick, Kinel, MBH, MacroBoost.
 
-This is a first CRAN submission.
+## Reverse dependencies
 
-The flagged words are all legitimate domain-specific terms:
-- **AICc**: corrected Akaike Information Criterion (standard statistical abbreviation)
-- **Hodrick**: proper name, co-inventor of the Hodrick-Prescott filter
-- **Kinel**: author's surname in a self-citation
-- **MBH**: acronym for MacroBoost Hybrid (the package's flagship filter)
-- **MacroBoost**: the package's gradient-boosting methodology
-
-These terms are included in `inst/WORDLIST`.
-
-## Downstream dependencies
-
-None — this is the first CRAN submission of this package.
+There are no reverse dependencies for this package on CRAN.
