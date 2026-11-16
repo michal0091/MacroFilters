@@ -11,10 +11,9 @@ Description: Provides high-performance tools for macroeconomic trend
     Hodrick-Prescott filter, 'MacroFilters' utilizes component-wise
     L2-boosting with robust loss functions (Huber) to handle extreme
     transient shocks (e.g., COVID-19) without inducing spurious trend
-    shifts. The algorithm includes an automated two-layer diagnostic stage
-    for unit roots and structural breaks, optimized via corrected AICc for
-    computational efficiency. Methodology detailed in Kinel (2026)
-    <doi:10.2139/ssrn.6371138>.
+    shifts. The boosted HP variant offers BIC- and ADF-based stopping rules,
+    and all filters provide block-bootstrap uncertainty bands. Methodology
+    detailed in Kinel (2026) <doi:10.2139/ssrn.6371138>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-US
@@ -23,18 +22,16 @@ Roxygen: list(markdown = TRUE)
 URL: https://github.com/michal0091/MacroFilters, https://michal0091.github.io/MacroFilters/
 BugReports: https://github.com/michal0091/MacroFilters/issues
 Imports:
-    data.table,
-    ggplot2,
-    Matrix,
+    data.table (>= 1.12.0),
+    ggplot2 (>= 3.4.0),
+    Matrix (>= 1.3-0),
     mboost,
     tseries
 Suggests:
     knitr,
     rmarkdown,
     scales,
-    strucchange,
     testthat (>= 3.0.0),
-    usethis,
     xts,
     zoo
 VignetteBuilder: knitr
