@@ -106,25 +106,117 @@
 }
 
 
+#' Infer the sampling frequency from a time index
+#'
+#' Reads the frequency off a `zoo`/`xts` index. `Date` and `POSIXct` indexes
+#' are classified by the median spacing in days (annual, quarterly, monthly,
+#' weekly). `yearqtr`, `yearmon` and numeric indexes with a fractional step
+#' (e.g. `1995.00, 1995.25, ...`, as produced by `zoo::as.zoo(<ts>)`) give
+#' `1 / step`. An integer-step numeric index (`1, 2, 3, ...`, the `zoo()`
+#' default) carries no calendar information and returns `NULL`, as does any
+#' irregular or daily index.
+#'
+#' @param idx Index vector or `NULL`.
+#' @return Numeric frequency (1, 4, 12, 52, ...) or `NULL`.
+#' @keywords internal
+#' @noRd
+.infer_freq_from_index <- function(idx) {
+  if (is.null(idx) || length(idx) < 3L) return(NULL)
+
+  if (inherits(idx, c("Date", "POSIXt"))) {
+    days <- tryCatch(
+      as.numeric(stats::median(diff(as.numeric(as.Date(idx))))),
+      error = function(e) NA_real_
+    )
+    if (!is.finite(days)) return(NULL)
+    if (days >= 360) return(1)
+    if (days >= 85)  return(4)
+    if (days >= 27)  return(12)
+    if (days >= 6)   return(52)
+    return(NULL)
+  }
+
+  if (inherits(idx, c("yearqtr", "yearmon")) || is.numeric(idx)) {
+    step <- stats::median(diff(as.numeric(idx)))
+    if (!is.finite(step) || step <= 0 || step >= 1) return(NULL)
+    f  <- 1 / step
+    fr <- round(f)
+    if (fr >= 2 && abs(f - fr) < 1e-6) return(fr)
+  }
+  NULL
+}
+
+
+#' Determine the series frequency without assuming a default
+#'
+#' Single source of truth for every filter. Precedence: the `ts` attribute,
+#' then a calendar index (`xts`/`zoo`), then the user's `freq` argument, which
+#' is documented as the fallback for when `x` carries no frequency. Warns
+#' only when `freq` contradicts the frequency of `x`. When the result is
+#' `NULL`, each caller decides what to assume, and only when it actually needs
+#' a frequency (see `.frequency_or_default()`).
+#'
+#' @param inputs The list returned by `ensure_computable()`.
+#' @param freq User-supplied frequency or `NULL`.
+#' @return Numeric frequency or `NULL` when it cannot be determined.
+#' @keywords internal
+#' @noRd
+.detect_frequency <- function(inputs, freq = NULL) {
+  if (!is.null(freq)) {
+    freq <- as.numeric(freq)
+    if (length(freq) != 1L || !is.finite(freq) || freq <= 0) {
+      stop("`freq` must be a single positive number.", call. = FALSE)
+    }
+  }
+
+  if (!is.null(inputs$tsp)) {
+    f_x <- as.numeric(inputs$tsp[3L]); src <- "its ts attribute"
+  } else {
+    f_x <- .infer_freq_from_index(inputs$idx); src <- "its time index"
+  }
+  if (is.null(f_x)) return(freq)
+
+  if (!is.null(freq) && !isTRUE(all.equal(freq, f_x))) {
+    warning(sprintf(
+      "`freq = %g` ignored: `x` has frequency %g from %s.", freq, f_x, src
+    ), call. = FALSE)
+  }
+  f_x
+}
+
+
+#' Fall back to a default frequency, optionally warning
+#'
+#' @param freq_detected Result of `.detect_frequency()`.
+#' @param default Frequency to assume when `freq_detected` is `NULL`.
+#' @param warning_msg Warning text, or `NULL` to fall back silently.
+#' @return Numeric frequency.
+#' @keywords internal
+#' @noRd
+.frequency_or_default <- function(freq_detected, default, warning_msg = NULL) {
+  if (!is.null(freq_detected)) return(freq_detected)
+  if (!is.null(warning_msg)) warning(warning_msg, call. = FALSE)
+  default
+}
+
+
 #' Resolve the bootstrap block size
 #'
 #' Shared "auto" logic so every public filter resolves `block_size`
-#' identically: two full cycles (`2 * frequency`) for `"auto"`, otherwise the
+#' identically: two full cycles (`2 * freq`) for `"auto"`, otherwise the
 #' user value, both capped at `floor(n_eff / 3)` to keep at least three blocks.
 #'
-#' @param x Original input (for `stats::frequency`).
+#' @param freq Numeric frequency already resolved by the caller (use `1` when
+#'   it is unknown, which keeps the 0.2.1 behaviour for plain vectors).
 #' @param block_size `"auto"` or a positive integer.
 #' @param n_eff Effective series length the engine will resample over.
 #' @return Positive integer block size.
 #' @keywords internal
 #' @noRd
-.resolve_block_size <- function(x, block_size, n_eff) {
+.resolve_block_size <- function(freq, block_size, n_eff) {
   cap <- max(1L, floor(n_eff / 3L))
-  if (identical(block_size, "auto")) {
-    max(1L, min(2L * as.integer(stats::frequency(x)), cap))
-  } else {
-    max(1L, min(as.integer(block_size), cap))
-  }
+  bs  <- if (identical(block_size, "auto")) 2L * as.integer(freq) else as.integer(block_size)
+  max(1L, min(bs, cap))
 }
 
 

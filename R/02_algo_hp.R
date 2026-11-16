@@ -14,9 +14,12 @@
 #' @param lambda Smoothing parameter.
 #'   If `NULL` (default), it is auto-detected using the Ravn-Uhlig rule
 #'   (`6.25 * freq^4`).
-#' @param freq Numeric frequency override (1 = annual, 4 = quarterly,
-#'   12 = monthly). Used only when `lambda` is `NULL` and the frequency cannot
-#'   be inferred from `x`.
+#' @param freq Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly,
+#'   52 = weekly), used only when it cannot be read from `x`: a plain numeric
+#'   vector, or a `zoo`/`xts` object without a regular calendar index. It sets
+#'   the default `lambda` and the `"auto"` bootstrap block size. A `ts`
+#'   attribute or a regular `Date`, `POSIXct`, `yearqtr` or `yearmon` index
+#'   takes precedence; a `freq` that contradicts it is ignored with a warning.
 #' @inheritParams mbh_filter
 #'
 #' @details
@@ -35,7 +38,8 @@
 #' 129 600 (monthly).
 #'
 #' @return A list of class `c("macrofilter", "list")` with `trend`, `cycle`,
-#'   `data`, and `meta`. When `boot_iter > 0` it also carries `trend_lower`
+#'   `data`, and `meta`. `meta$freq` is the frequency read from `x` or `freq`
+#'   (`NA` when unknown). When `boot_iter > 0` it also carries `trend_lower`
 #'   and `trend_upper` (95% normal-approximation bootstrap band).
 #'
 #' @references
@@ -69,20 +73,16 @@ hp_filter <- function(x, lambda = NULL, freq = NULL,
   }
 
   # 3. Auto-lambda (Ravn-Uhlig heuristic) ------------------------------------
+  freq_detected <- .detect_frequency(inputs, freq)
   if (is.null(lambda)) {
-    if (!is.null(inputs$tsp)) {
-      freq_detected <- inputs$tsp[3L]
-    } else if (!is.null(freq)) {
-      freq_detected <- freq
-    } else {
-      freq_detected <- 4
-      warning(
+    freq_lambda <- .frequency_or_default(
+      freq_detected, default = 4,
+      warning_msg = paste0(
         "Cannot determine series frequency; assuming quarterly (freq = 4). ",
-        "Pass `lambda` or `freq` explicitly to silence this warning.",
-        call. = FALSE
+        "Pass `lambda` or `freq` explicitly to silence this warning."
       )
-    }
-    lambda <- 6.25 * freq_detected^4
+    )
+    lambda <- 6.25 * freq_lambda^4
   }
 
   # 4-6. Sparse solve (timed) ------------------------------------------------
@@ -112,7 +112,8 @@ hp_filter <- function(x, lambda = NULL, freq = NULL,
   # 7. Optional block bootstrap ----------------------------------------------
   ci_bands <- NULL
   if (boot_iter > 0L) {
-    bs <- .resolve_block_size(x, block_size, n)
+    bs <- .resolve_block_size(.frequency_or_default(freq_detected, 1),
+                              block_size, n)
     CH <- .build_hp_cholesky(n, lambda)        # factorize once, reuse per replicate
     ff <- function(y_b) y_b - .hp_fast(y_b, CH = CH)
     ci_bands <- .boot_engine(
@@ -132,6 +133,7 @@ hp_filter <- function(x, lambda = NULL, freq = NULL,
     meta  = list(
       method       = "HP",
       lambda       = lambda,
+      freq         = if (is.null(freq_detected)) NA_real_ else freq_detected,
       compute_time = elapsed,
       ts_class     = inputs$class,
       tsp          = inputs$tsp,

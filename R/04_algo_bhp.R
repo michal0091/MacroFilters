@@ -23,9 +23,12 @@
 #' @param sig_level Numeric.
 #'   Significance level for the ADF test when `stopping = "adf"`
 #'   (default 0.05).
-#' @param freq Numeric frequency override (1 = annual, 4 = quarterly,
-#'   12 = monthly). Used only when `lambda` is `NULL` and the frequency cannot
-#'   be inferred from `x`.
+#' @param freq Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly,
+#'   52 = weekly), used only when it cannot be read from `x`: a plain numeric
+#'   vector, or a `zoo`/`xts` object without a regular calendar index. It sets
+#'   the default `lambda` and the `"auto"` bootstrap block size. A `ts`
+#'   attribute or a regular `Date`, `POSIXct`, `yearqtr` or `yearmon` index
+#'   takes precedence; a `freq` that contradicts it is ignored with a warning.
 #' @inheritParams mbh_filter
 #'
 #' @details
@@ -46,7 +49,8 @@
 #'
 #' @return A list of class `c("macrofilter", "list")` with `trend`, `cycle`,
 #'   `data`, and `meta` (`method = "bHP"`, `lambda`, `iterations`,
-#'   `stopping_rule`, `compute_time`). When `boot_iter > 0` it also carries
+#'   `stopping_rule`, `freq`, `compute_time`; `freq` is `NA` when the
+#'   frequency is unknown). When `boot_iter > 0` it also carries
 #'   `trend_lower` and `trend_upper` (95% normal-approximation bootstrap band);
 #'   each bootstrap refit runs a *fixed* `iterations` passes, conditioning on
 #'   the complexity selected by the base fit.
@@ -84,20 +88,16 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   iter_max <- as.integer(iter_max)
 
   # 4. Auto-lambda (Ravn-Uhlig heuristic) ------------------------------------
+  freq_detected <- .detect_frequency(inputs, freq)
   if (is.null(lambda)) {
-    if (!is.null(inputs$tsp)) {
-      freq_detected <- inputs$tsp[3L]
-    } else if (!is.null(freq)) {
-      freq_detected <- freq
-    } else {
-      freq_detected <- 4
-      warning(
+    freq_lambda <- .frequency_or_default(
+      freq_detected, default = 4,
+      warning_msg = paste0(
         "Cannot determine series frequency; assuming quarterly (freq = 4). ",
-        "Pass `lambda` or `freq` explicitly to silence this warning.",
-        call. = FALSE
+        "Pass `lambda` or `freq` explicitly to silence this warning."
       )
-    }
-    lambda <- 6.25 * freq_detected^4
+    )
+    lambda <- 6.25 * freq_lambda^4
   }
 
   # 5. Build sparse HP system once -------------------------------------------
@@ -207,7 +207,8 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   # 9. Optional block bootstrap ----------------------------------------------
   ci_bands <- NULL
   if (boot_iter > 0L) {
-    bs <- .resolve_block_size(x, block_size, n)
+    bs <- .resolve_block_size(.frequency_or_default(freq_detected, 1),
+                              block_size, n)
     # Reuse the factor CH built for the base fit (no rebuild).
     ff <- function(y_b) y_b - .bhp_fast(y_b, CH = CH, iter = final_iter)
     ci_bands <- .boot_engine(
@@ -229,6 +230,7 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
       lambda        = lambda,
       iterations    = final_iter,
       stopping_rule = stopping,
+      freq          = if (is.null(freq_detected)) NA_real_ else freq_detected,
       compute_time  = elapsed,
       ts_class      = inputs$class,
       tsp           = inputs$tsp,

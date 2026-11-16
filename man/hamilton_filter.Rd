@@ -4,14 +4,22 @@
 \alias{hamilton_filter}
 \title{Hamilton Filter}
 \usage{
-hamilton_filter(x, h = NULL, p = 4L, boot_iter = 0, block_size = "auto")
+hamilton_filter(
+  x,
+  h = NULL,
+  p = 4L,
+  boot_iter = 0,
+  block_size = "auto",
+  freq = NULL
+)
 }
 \arguments{
 \item{x}{Numeric vector, \code{ts}, \code{xts}, or \code{zoo} object.}
 
 \item{h}{Integer horizon (number of periods ahead). If \code{NULL} (default),
 auto-detected from the series frequency using Hamilton's rule:
-annual = 2, quarterly = 8, monthly = 24.}
+annual = 2, quarterly = 8, monthly = 24, and \code{2 * freq} for any other
+frequency.}
 
 \item{p}{Integer number of lags in the regression (default 4).}
 
@@ -27,13 +35,23 @@ See also \code{block_size}.}
 
 \item{block_size}{Positive integer or \code{"auto"}.
 Block length for the moving-block bootstrap (used only when
-\code{boot_iter > 0}). If \code{"auto"} (default), it is set to
-\code{2 * stats::frequency(x)} (two full cycles), bounded above by
-\code{floor(length(x) / 3)} to keep at least three blocks.}
+\code{boot_iter > 0}). If \code{"auto"} (default), it is set to \code{2 * freq} (two
+full cycles), bounded above by \code{floor(length(x) / 3)} to keep at least
+three blocks. \code{freq} is read from \code{x} (a \code{ts} attribute or a regular
+\code{Date}, \code{POSIXct}, \code{yearqtr} or \code{yearmon} index), else taken from the
+\code{freq} argument; when neither is available it is \code{1}.}
+
+\item{freq}{Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly,
+52 = weekly), used only when it cannot be read from \code{x}: a plain numeric
+vector, or a \code{zoo}/\code{xts} object without a regular calendar index. It sets
+the default \code{h} and the \code{"auto"} bootstrap block size. A \code{ts} attribute
+or a regular \code{Date}, \code{POSIXct}, \code{yearqtr} or \code{yearmon} index takes
+precedence; a \code{freq} that contradicts it is ignored with a warning.}
 }
 \value{
 A list of class \code{c("macrofilter", "list")} with \code{trend}, \code{cycle},
-\code{data}, and \code{meta} (\code{h}, \code{p}, \code{coefficients}, \code{compute_time}). When
+\code{data}, and \code{meta} (\code{h}, \code{p}, \code{coefficients}, \code{freq}, \code{compute_time};
+\code{freq} is \code{NA} when the frequency is unknown). When
 \code{boot_iter > 0} it also carries \code{trend_lower} and \code{trend_upper} (95\%
 normal-approximation band). The bootstrap is a residual bootstrap
 conditional on the initial \code{h + p - 1} observations (the regression

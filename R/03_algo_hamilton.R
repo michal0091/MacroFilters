@@ -13,8 +13,15 @@
 #' @param x Numeric vector, `ts`, `xts`, or `zoo` object.
 #' @param h Integer horizon (number of periods ahead). If `NULL` (default),
 #'   auto-detected from the series frequency using Hamilton's rule:
-#'   annual = 2, quarterly = 8, monthly = 24.
+#'   annual = 2, quarterly = 8, monthly = 24, and `2 * freq` for any other
+#'   frequency.
 #' @param p Integer number of lags in the regression (default 4).
+#' @param freq Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly,
+#'   52 = weekly), used only when it cannot be read from `x`: a plain numeric
+#'   vector, or a `zoo`/`xts` object without a regular calendar index. It sets
+#'   the default `h` and the `"auto"` bootstrap block size. A `ts` attribute
+#'   or a regular `Date`, `POSIXct`, `yearqtr` or `yearmon` index takes
+#'   precedence; a `freq` that contradicts it is ignored with a warning.
 #' @inheritParams mbh_filter
 #'
 #' @details
@@ -40,7 +47,8 @@
 #' conditional bootstrap, not an artefact.
 #'
 #' @return A list of class `c("macrofilter", "list")` with `trend`, `cycle`,
-#'   `data`, and `meta` (`h`, `p`, `coefficients`, `compute_time`). When
+#'   `data`, and `meta` (`h`, `p`, `coefficients`, `freq`, `compute_time`;
+#'   `freq` is `NA` when the frequency is unknown). When
 #'   `boot_iter > 0` it also carries `trend_lower` and `trend_upper` (95%
 #'   normal-approximation band). The bootstrap is a residual bootstrap
 #'   conditional on the initial `h + p - 1` observations (the regression
@@ -59,7 +67,8 @@
 #' result <- hamilton_filter(y)
 #' print(result)
 hamilton_filter <- function(x, h = NULL, p = 4L,
-                            boot_iter = 0, block_size = "auto") {
+                            boot_iter = 0, block_size = "auto",
+                            freq = NULL) {
 
   # 1. Ingest ----------------------------------------------------------------
   inputs <- ensure_computable(x)
@@ -67,22 +76,20 @@ hamilton_filter <- function(x, h = NULL, p = 4L,
   n <- length(y)
 
   # 2. Auto-h (horizon) ------------------------------------------------------
+  freq_detected <- .detect_frequency(inputs, freq)
   if (is.null(h)) {
-    if (!is.null(inputs$tsp)) {
-      freq_detected <- inputs$tsp[3L]
-    } else {
-      freq_detected <- 4
-      warning(
+    freq_h <- .frequency_or_default(
+      freq_detected, default = 4,
+      warning_msg = paste0(
         "Cannot determine series frequency; assuming quarterly (freq = 4). ",
-        "Pass `h` explicitly to silence this warning.",
-        call. = FALSE
+        "Pass `h` or `freq` explicitly to silence this warning."
       )
-    }
-    h <- switch(as.character(freq_detected),
+    )
+    h <- switch(as.character(freq_h),
       "1"  = 2L,
       "4"  = 8L,
       "12" = 24L,
-      as.integer(2 * freq_detected)
+      as.integer(2 * freq_h)
     )
   }
   h <- as.integer(h)
@@ -138,7 +145,8 @@ hamilton_filter <- function(x, h = NULL, p = 4L,
   ci_bands <- NULL
   if (boot_iter > 0L) {
     valid <- (p + h):n
-    bs    <- .resolve_block_size(x, block_size, length(valid))
+    bs    <- .resolve_block_size(.frequency_or_default(freq_detected, 1),
+                                 block_size, length(valid))
     lead  <- y[seq_len(p + h - 1L)]
     ff <- function(y_bv) {
       y_full     <- c(lead, y_bv)
@@ -167,6 +175,7 @@ hamilton_filter <- function(x, h = NULL, p = 4L,
       h            = h,
       p            = p,
       coefficients = fit$coefficients,
+      freq         = if (is.null(freq_detected)) NA_real_ else freq_detected,
       compute_time = elapsed,
       ts_class     = inputs$class,
       tsp          = inputs$tsp,
