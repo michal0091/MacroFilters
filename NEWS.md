@@ -1,3 +1,32 @@
+# MacroFilters (development version)
+
+## Bug fixes
+
+* `xts` and `zoo` inputs now get the same defaults as the equivalent `ts`.
+  The frequency is read from a regular `Date`, `POSIXct`, `yearqtr` or
+  `yearmon` index. Before, a `Date`-indexed series had no frequency:
+  `hp_filter()`, `bhp_filter()` and `hamilton_filter()` warned and assumed
+  quarterly, while `mbh_filter()` (for `d = "auto"`) and the `"auto"`
+  bootstrap block size treated it as annual.
+* The `"auto"` bootstrap block size now follows the `freq` argument when `x`
+  is a plain numeric vector. Before, it was always 2 for such vectors. A
+  vector without `freq` still gets a block of 2.
+* `zoo` objects of class `zooreg`, which is what `zoo::as.zoo()` returns for
+  a `ts`, are now accepted. Before, they were rejected as an unsupported
+  class.
+* Multi-column input (`mts`, a multi-column `xts` or `zoo`, or a matrix) is
+  now an error. Before, a multi-column `xts` or `zoo` was silently flattened
+  into one long series. A single-column matrix is accepted as a vector.
+
+## New features
+
+* `hamilton_filter()` and `mbh_filter()` gain a `freq` argument, as
+  `hp_filter()` and `bhp_filter()` already had. It is used only when `x`
+  carries no frequency of its own. A `freq` that contradicts the frequency of
+  `x` is now ignored with a warning instead of silently.
+* All filters store in `meta$freq` the frequency read from `x` or `freq`,
+  or `NA` when it is unknown.
+
 # MacroFilters 0.2.1
 
 ## Other changes

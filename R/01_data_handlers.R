@@ -9,6 +9,13 @@
 #' Detects the class of `x`, extracts values and temporal metadata, and
 #' validates that the series contains no `NA` or `Inf` values.
 #'
+#' Dispatch uses `inherits()`, so subclasses work: `zooreg` (what
+#' `zoo::as.zoo()` returns for a `ts`) is handled as `zoo`, and `xts` is
+#' tested first because it inherits from `zoo`. Filters are univariate: any
+#' input with more than one column (`mts`, a multi-column `xts`/`zoo`, a
+#' matrix) is an error instead of being flattened into one long vector. A
+#' single-column matrix is accepted as a vector.
+#'
 #' @param x A `numeric`, `ts`, `xts`, or `zoo` object.
 #' @return A list with components:
 #'   \describe{
@@ -21,23 +28,34 @@
 #' @keywords internal
 #' @noRd
 ensure_computable <- function(x) {
-  cls <- class(x)[1L]
-
-  handler <- switch(cls,
-    "numeric" = .handle_numeric(x),
-    "integer" = .handle_numeric(x),
-    "ts"      = .handle_ts(x),
-    "xts"     = .handle_xts(x),
-    "zoo"     = .handle_zoo(x),
-    # data.frame / data.table / anything else -> error
+  if (!is.null(dim(x)) && NCOL(x) > 1L) {
     stop(
       sprintf(
-        "Unsupported input class '%s'. Pass a numeric vector, ts, xts, or zoo object.\n  Hint: for data.frames use df$column.",
-        cls
+        "`x` has %d columns; filters are univariate. Pass one column (e.g. x[, 1]).",
+        NCOL(x)
       ),
       call. = FALSE
     )
-  )
+  }
+
+  handler <- if (inherits(x, "xts")) {
+    .handle_xts(x)                       # before zoo: xts inherits from zoo
+  } else if (inherits(x, "zoo")) {
+    .handle_zoo(x)                       # includes zooreg
+  } else if (inherits(x, "ts")) {
+    .handle_ts(x)
+  } else if (is.numeric(x) && is.null(attr(x, "class"))) {
+    .handle_numeric(x)                   # numeric, integer, 1-column matrix
+  } else {
+    # data.frame / data.table / character / anything else -> error
+    stop(
+      sprintf(
+        "Unsupported input class '%s'. Pass a numeric vector, ts, xts, or zoo object.\n  Hint: for data.frames use df$column.",
+        class(x)[1L]
+      ),
+      call. = FALSE
+    )
+  }
 
   .validate_values(handler$y)
   handler
