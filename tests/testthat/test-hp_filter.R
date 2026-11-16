@@ -1,19 +1,21 @@
 # ── Tests: hp_filter() ────────────────────────────────────────────────────────
 
-# ── 1. Identity: trend + cycle == data ───────────────────────────────────────
+# ── 1. Analytical properties ─────────────────────────────────────────────────
 
-test_that("HP trend + cycle reconstructs original data", {
-  set.seed(1)
-  y <- cumsum(rnorm(100))
-  result <- hp_filter(y, lambda = 1600)
-  expect_equal(result$trend + result$cycle, result$data, tolerance = 1e-9)
+test_that("HP: linear input is a fixed point", {
+  y <- 3 + 0.5 * (1:100)
+  r <- hp_filter(y, lambda = 1600)
+  expect_equal(r$trend, y, tolerance = 1e-10)
+  expect_equal(r$cycle, rep(0, 100), tolerance = 1e-10)
 })
 
-test_that("Identity holds for ts input with auto-lambda", {
-  set.seed(2)
-  y_ts <- ts(cumsum(rnorm(80)), start = c(2000, 1), frequency = 4)
-  result <- hp_filter(y_ts)
-  expect_equal(result$trend + result$cycle, result$data, tolerance = 1e-9)
+test_that("HP: lambda -> 0 returns the data; lambda -> Inf returns the OLS line", {
+  set.seed(1)
+  y <- cumsum(rnorm(100))
+  t <- 1:100
+  expect_equal(hp_filter(y, lambda = 1e-12)$trend, y, tolerance = 1e-6)
+  ols <- stats::lm.fit(cbind(1, t), y)$fitted.values
+  expect_lt(max(abs(hp_filter(y, lambda = 1e12)$trend - ols)), 1e-3)
 })
 
 # ── 2. Invariance: same result regardless of input class ─────────────────────
