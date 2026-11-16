@@ -29,6 +29,7 @@ Imports:
     tseries
 Suggests:
     knitr,
+    mFilter,
     rmarkdown,
     scales,
     testthat (>= 3.0.0),
