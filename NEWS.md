@@ -17,6 +17,9 @@
 * Multi-column input (`mts`, a multi-column `xts` or `zoo`, or a matrix) is
   now an error. Before, a multi-column `xts` or `zoo` was silently flattened
   into one long series. A single-column matrix is accepted as a vector.
+* `autoplot()` now draws `xts` and `zoo` input against its own time index:
+  a date axis for a `Date` or `POSIXct` index, decimal time for `yearqtr` or
+  `yearmon`. Before, it plotted the positions `1..n`.
 
 ## New features
 

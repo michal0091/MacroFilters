@@ -13,6 +13,10 @@ ggplot2::autoplot
 #' (`$trend_lower` / `$trend_upper`), a 95% confidence ribbon is drawn behind
 #' the lines automatically.
 #'
+#' The x axis uses the time stamps of the original input: decimal time for a
+#' `ts`, `yearqtr` or `yearmon` index, dates for a `Date` or `POSIXct` index
+#' (`xts`/`zoo`), and the positions `1..n` for a plain numeric vector.
+#'
 #' @param object A `macrofilter` object.
 #' @param ... Currently ignored; present for S3 generic compatibility.
 #'
@@ -36,12 +40,7 @@ autoplot.macrofilter <- function(object, ...) {
     stop("`object` must be a 'macrofilter' object.", call. = FALSE)
   }
 
-  if (!is.null(object$meta$tsp)) {
-    tsp      <- object$meta$tsp
-    time_vec <- seq(from = tsp[1L], to = tsp[2L], by = 1 / tsp[3L])
-  } else {
-    time_vec <- seq_along(object$trend)
-  }
+  time_vec <- .time_axis(object)
 
   DT <- data.table::data.table(
     time  = time_vec,
@@ -93,4 +92,42 @@ autoplot.macrofilter <- function(object, ...) {
       x = "Time",
       y = "Value"
     )
+}
+
+
+#' Build the x axis of a macrofilter plot from its stored time identity
+#'
+#' Uses `meta$tsp` for `ts` input, building the sequence with `length.out` so
+#' floating-point steps can never add or drop a point. Otherwise uses
+#' `meta$idx` (`xts`/`zoo` input): `Date` and `POSIXct` stay as they are so
+#' ggplot2 draws a date axis, and `yearqtr`/`yearmon` become decimal time,
+#' which ggplot2 can scale without zoo's scale functions. Anything else, or an
+#' index whose length does not match the series, falls back to `1..n`.
+#'
+#' @param object A `macrofilter` object.
+#' @return A vector of length `length(object$trend)`.
+#' @keywords internal
+#' @noRd
+.time_axis <- function(object) {
+  n   <- length(object$trend)
+  m   <- object$meta
+  idx <- m$idx
+
+  if (!is.null(m$tsp)) {
+    return(seq(from = m$tsp[1L], by = 1 / m$tsp[3L], length.out = n))
+  }
+  if (!is.null(idx) && length(idx) == n) {
+    # Rebuild from the numeric values: an xts index carries `tclass`/`tzone`
+    # attributes that should not leak into the plot data.
+    if (inherits(idx, "Date")) return(structure(as.numeric(idx), class = "Date"))
+    if (inherits(idx, "POSIXct")) {
+      tz <- attr(idx, "tzone")
+      return(as.POSIXct(as.numeric(idx), origin = "1970-01-01",
+                        tz = if (is.null(tz)) "" else tz[1L]))
+    }
+    if (inherits(idx, c("yearqtr", "yearmon")) || is.numeric(idx)) {
+      return(as.numeric(idx))
+    }
+  }
+  seq_len(n)
 }
