@@ -1,4 +1,4 @@
-# MacroFilters (development version)
+# MacroFilters 0.2.2
 
 ## Bug fixes
 
@@ -38,6 +38,17 @@
   `d = "auto"`. The value is in `meta$d`; set
   `options(MacroFilters.verbose = TRUE)` to get the message back.
 
+## Documentation
+
+* The package description no longer claims an automated diagnostic stage for
+  unit roots and structural breaks, which the package does not have.
+* The README example used a `us_gdp_xts` object that the package does not
+  ship. It now uses `us_gdp_vintage` from 2000 onwards.
+* The BIC formula in the `bhp_filter()` help now uses the trace of the
+  boosted smoother, `tr(B_m)`, which is what the code computes.
+* The `mbh_filter()` help announces that `select_mstop` will be deprecated
+  in 0.3.0.
+
 ## Internal changes
 
 * All four filters now build their result through one constructor, which
@@ -48,6 +59,11 @@
   `bhp_filter()` and `hamilton_filter()` can change in the last
   floating-point digit; the trend and the bands do not change.
 * Removed the unused `restore_class()` helpers.
+* `hp_filter()` and `bhp_filter()` factor the HP system once and reuse it for
+  the fit and the bootstrap.
+* Dropped the unused `strucchange` and `usethis` from Suggests, added
+  `mFilter` to Suggests for a reference test, and set minimum versions for
+  `data.table`, `ggplot2` and `Matrix`.
 
 # MacroFilters 0.2.1
 
