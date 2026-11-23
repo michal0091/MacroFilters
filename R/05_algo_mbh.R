@@ -37,8 +37,9 @@
 #'   calibrated as the MAD of the HP cyclical residual (HP smoothing set by
 #'   `hp_lambda`). This anchors the threshold to the output-gap scale rather than
 #'   the growth-rate scale, avoiding the under-truncation failure mode of the
-#'   legacy `mad(diff(y))` heuristic. A `message()` is emitted reporting the
-#'   exact value chosen. Supply an explicit positive numeric to override.
+#'   legacy `mad(diff(y))` heuristic. The value chosen is stored in `meta$d`;
+#'   set `options(MacroFilters.verbose = TRUE)` to also report it with a
+#'   `message()`. Supply an explicit positive numeric to override.
 #' @param boot_iter Non-negative integer.
 #'   Number of block-bootstrap iterations for uncertainty quantification
 #'   (default `0`, bootstrap disabled). When `> 0`, the function adds
@@ -201,10 +202,12 @@ mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
     if (is.null(hp_lambda)) hp_lambda <- 6.25 * freq_mbh^4
     d_val <- stats::mad(.hp_fast(y, lambda = hp_lambda))
     if (d_val < 1e-6) d_val <- 0.01
-    message(sprintf(
-      "Info: Huber threshold automatically calibrated to d = %.6f via HP cyclical MAD.",
-      d_val
-    ))
+    if (isTRUE(getOption("MacroFilters.verbose", FALSE))) {
+      message(sprintf(
+        "Info: Huber threshold automatically calibrated to d = %.6f via HP cyclical MAD.",
+        d_val
+      ))
+    }
   } else {
     d_val <- as.double(d)
     if (d_val < 1e-6) d_val <- 0.01

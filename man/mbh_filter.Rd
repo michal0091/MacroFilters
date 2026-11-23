@@ -27,8 +27,9 @@ The delta parameter for Huber loss. If \code{"auto"} (default), it is
 calibrated as the MAD of the HP cyclical residual (HP smoothing set by
 \code{hp_lambda}). This anchors the threshold to the output-gap scale rather than
 the growth-rate scale, avoiding the under-truncation failure mode of the
-legacy \code{mad(diff(y))} heuristic. A \code{message()} is emitted reporting the
-exact value chosen. Supply an explicit positive numeric to override.}
+legacy \code{mad(diff(y))} heuristic. The value chosen is stored in \code{meta$d};
+set \code{options(MacroFilters.verbose = TRUE)} to also report it with a
+\code{message()}. Supply an explicit positive numeric to override.}
 
 \item{boot_iter}{Non-negative integer.
 Number of block-bootstrap iterations for uncertainty quantification

@@ -32,6 +32,12 @@
 * All filters store in `meta$na_lead` the number of leading positions with no
   estimate: `h + p - 1` for `hamilton_filter()`, `0` for the others.
 
+## Other changes
+
+* `mbh_filter()` no longer prints the calibrated Huber threshold when
+  `d = "auto"`. The value is in `meta$d`; set
+  `options(MacroFilters.verbose = TRUE)` to get the message back.
+
 ## Internal changes
 
 * All four filters now build their result through one constructor, which

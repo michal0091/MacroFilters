@@ -149,9 +149,20 @@ test_that("Meta contains all params: knots, d, mstop, nu, compute_time", {
 
 # ── 5. Auto-calibration message ──────────────────────────────────────────────
 
-test_that("d = 'auto' emits the calibration message", {
+test_that("d = 'auto' is silent by default and stores d in meta", {
   set.seed(12)
   y <- cumsum(rnorm(80))
+  op <- options(MacroFilters.verbose = NULL)
+  on.exit(options(op), add = TRUE)
+  expect_no_message(res <- mbh_filter(y, mstop = 20L))
+  expect_true(is.numeric(res$meta$d) && res$meta$d > 0)
+})
+
+test_that("d = 'auto' emits the calibration message when verbose", {
+  set.seed(12)
+  y <- cumsum(rnorm(80))
+  op <- options(MacroFilters.verbose = TRUE)
+  on.exit(options(op), add = TRUE)
   expect_message(
     mbh_filter(y, mstop = 20L),
     "automatically calibrated"
@@ -161,5 +172,7 @@ test_that("d = 'auto' emits the calibration message", {
 test_that("Explicit numeric d emits no calibration message", {
   set.seed(13)
   y <- cumsum(rnorm(80))
+  op <- options(MacroFilters.verbose = TRUE)
+  on.exit(options(op), add = TRUE)
   expect_no_message(mbh_filter(y, d = 0.02, mstop = 20L))
 })
