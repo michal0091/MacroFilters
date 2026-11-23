@@ -11,9 +11,10 @@ Description: Provides high-performance tools for macroeconomic trend
     Hodrick-Prescott filter, 'MacroFilters' utilizes component-wise
     L2-boosting with robust loss functions (Huber) to handle extreme
     transient shocks (e.g., COVID-19) without inducing spurious trend
-    shifts. The boosted HP variant offers BIC- and ADF-based stopping rules,
-    and all filters provide block-bootstrap uncertainty bands. Methodology
-    detailed in Kinel (2026) <doi:10.2139/ssrn.6371138>.
+    shifts. The boosted HP variant offers stopping rules based on BIC or an
+    augmented Dickey-Fuller test, and all filters provide block-bootstrap
+    uncertainty bands. Methodology detailed in Kinel (2026)
+    <doi:10.2139/ssrn.6371138>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-US
