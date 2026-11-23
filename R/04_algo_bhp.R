@@ -221,30 +221,20 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   }
 
   # 10. Build S3 result -------------------------------------------------------
-  result <- list(
-    trend = final_trend,
-    cycle = final_cycle,
-    data  = y,
-    meta  = list(
-      method        = "bHP",
-      lambda        = lambda,
-      iterations    = final_iter,
-      stopping_rule = stopping,
-      freq          = if (is.null(freq_detected)) NA_real_ else freq_detected,
-      compute_time  = elapsed,
-      ts_class      = inputs$class,
-      tsp           = inputs$tsp,
-      idx           = inputs$idx
-    )
+  meta <- list(
+    method        = "bHP",
+    lambda        = lambda,
+    iterations    = final_iter,
+    stopping_rule = stopping,
+    freq          = if (is.null(freq_detected)) NA_real_ else freq_detected,
+    compute_time  = elapsed,
+    na_lead       = 0L,
+    ts_class      = inputs$class,
+    tsp           = inputs$tsp,
+    idx           = inputs$idx
   )
-  if (!is.null(ci_bands)) {
-    result$trend_lower <- ci_bands$lower
-    result$trend_upper <- ci_bands$upper
-  }
-  class(result) <- c("macrofilter", "list")
 
-  validate_macrofilter(result)
-  result
+  new_macrofilter(trend = final_trend, data = y, meta = meta, bands = ci_bands)
 }
 
 # ── Internal helper ─────────────────────────────────────────────────────────

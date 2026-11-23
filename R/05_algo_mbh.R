@@ -285,37 +285,25 @@ mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
   }
 
   # 10. Build S3 result -------------------------------------------------------
-  result <- list(
-    trend = trend_num,
-    cycle = cycle_num,
-    data  = y,
-    meta  = list(
-      method         = "MBH",
-      knots          = knots,
-      d              = d_val,
-      mstop          = mstop_final,
-      mstop_initial  = mstop,
-      nu             = nu,
-      df             = df,
-      select_mstop   = select_mstop,
-      boundary.knots = boundary.knots,
-      freq           = if (is.null(freq_detected)) NA_real_ else freq_detected,
-      compute_time   = elapsed,
-      # Temporal identity: stored once so trend, cycle AND bands can all be
-      # mapped back to real dates downstream (e.g. autoplot x-axis).
-      ts_class       = inputs$class,
-      tsp            = inputs$tsp,
-      idx            = inputs$idx
-    )
+  meta <- list(
+    method         = "MBH",
+    knots          = knots,
+    d              = d_val,
+    mstop          = mstop_final,
+    mstop_initial  = mstop,
+    nu             = nu,
+    df             = df,
+    select_mstop   = select_mstop,
+    boundary.knots = boundary.knots,
+    freq           = if (is.null(freq_detected)) NA_real_ else freq_detected,
+    compute_time   = elapsed,
+    na_lead        = 0L,
+    # Temporal identity: stored once so trend, cycle AND bands can all be
+    # mapped back to real dates downstream (e.g. autoplot x-axis).
+    ts_class       = inputs$class,
+    tsp            = inputs$tsp,
+    idx            = inputs$idx
   )
-  if (!is.null(ci_bands)) {
-    result$trend_lower <- ci_bands$lower
-    result$trend_upper <- ci_bands$upper
-  }
-  class(result) <- c("macrofilter", "list")
 
-  # 11. Validate --------------------------------------------------------------
-  validate_macrofilter(result)
-
-  result
+  new_macrofilter(trend = trend_num, data = y, meta = meta, bands = ci_bands)
 }

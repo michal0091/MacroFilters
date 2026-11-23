@@ -166,28 +166,18 @@ hamilton_filter <- function(x, h = NULL, p = 4L,
   }
 
   # 8. Build S3 result --------------------------------------------------------
-  result <- list(
-    trend = trend_num,
-    cycle = cycle_num,
-    data  = y,
-    meta  = list(
-      method       = "Hamilton",
-      h            = h,
-      p            = p,
-      coefficients = fit$coefficients,
-      freq         = if (is.null(freq_detected)) NA_real_ else freq_detected,
-      compute_time = elapsed,
-      ts_class     = inputs$class,
-      tsp          = inputs$tsp,
-      idx          = inputs$idx
-    )
+  meta <- list(
+    method       = "Hamilton",
+    h            = h,
+    p            = p,
+    coefficients = fit$coefficients,
+    freq         = if (is.null(freq_detected)) NA_real_ else freq_detected,
+    compute_time = elapsed,
+    na_lead      = h + p - 1L,
+    ts_class     = inputs$class,
+    tsp          = inputs$tsp,
+    idx          = inputs$idx
   )
-  if (!is.null(ci_bands)) {
-    result$trend_lower <- ci_bands$lower
-    result$trend_upper <- ci_bands$upper
-  }
-  class(result) <- c("macrofilter", "list")
 
-  validate_macrofilter(result)
-  result
+  new_macrofilter(trend = trend_num, data = y, meta = meta, bands = ci_bands)
 }

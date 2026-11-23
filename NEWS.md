@@ -29,6 +29,19 @@
   `x` is now ignored with a warning instead of silently.
 * All filters store in `meta$freq` the frequency read from `x` or `freq`,
   or `NA` when it is unknown.
+* All filters store in `meta$na_lead` the number of leading positions with no
+  estimate: `h + p - 1` for `hamilton_filter()`, `0` for the others.
+
+## Internal changes
+
+* All four filters now build their result through one constructor, which
+  derives the cycle as `data - trend` and validates the object. The checks
+  are now ones that can fail: equal lengths, a finite trend outside the
+  `NA` lead-in, and well-formed bootstrap bands. The old check of
+  `trend + cycle == data` held by construction. The cycle of
+  `bhp_filter()` and `hamilton_filter()` can change in the last
+  floating-point digit; the trend and the bands do not change.
+* Removed the unused `restore_class()` helpers.
 
 # MacroFilters 0.2.1
 
