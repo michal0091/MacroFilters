@@ -58,8 +58,9 @@ which admits the closed-form solution
 where \eqn{D} is the second-difference operator.
 
 The implementation builds \eqn{D} as a banded sparse matrix
-(\code{\link[Matrix:bandSparse]{Matrix::bandSparse()}}) and solves the symmetric positive-definite system
-with a sparse Cholesky decomposition (\code{\link[Matrix:solve]{Matrix::solve()}}).
+(\code{\link[Matrix:bandSparse]{Matrix::bandSparse()}}), factorizes the symmetric positive-definite system
+once with a sparse Cholesky decomposition (\code{\link[Matrix:Cholesky]{Matrix::Cholesky()}}) and reuses
+that factor for the bootstrap replicates.
 
 When \code{lambda} is not supplied the Ravn-Uhlig (2002) rule is applied:
 \code{lambda = 6.25 * freq^4}, yielding 6.25 (annual), 1600 (quarterly), and

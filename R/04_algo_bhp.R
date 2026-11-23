@@ -100,24 +100,12 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
     lambda <- 6.25 * freq_lambda^4
   }
 
-  # 5. Build sparse HP system once -------------------------------------------
-  D <- Matrix::bandSparse(
-    n    = n - 2L,
-    m    = n,
-    k    = c(0L, 1L, 2L),
-    diagonals = list(
-      rep(1,  n - 2L),
-      rep(-2, n - 2L),
-      rep(1,  n - 2L)
-    )
-  )
-  Q <- Matrix::Diagonal(n) + lambda * Matrix::crossprod(D)
-
-  # Factorize once: reused by every base iteration AND every bootstrap
-  # replicate. Q itself is retained only for the BIC eigendecomposition below.
-  CH <- Matrix::Cholesky(Matrix::forceSymmetric(Q))
+  # 5. Factorize the HP system once -----------------------------------------
+  # Reused by every base iteration AND every bootstrap replicate.
+  CH <- .build_hp_cholesky(n, lambda)
 
   # 6. BIC precomputation (eigenvalues of Q) ---------------------------------
+  # Q itself is needed only here, until the trace is computed from CH (1.9).
   if (stopping == "bic") {
     if (n > 5000L) {
       warning(
@@ -126,7 +114,9 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
         call. = FALSE
       )
     }
+    Q   <- .hp_system_matrix(n, lambda)
     eig <- eigen(as.matrix(Q), symmetric = TRUE, only.values = TRUE)$values
+    rm(Q)
     # ratios[i] = (eig[i] - 1) / eig[i]  -- these are (1 - s_i)
     ratios <- (eig - 1) / eig
   }
@@ -136,9 +126,10 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
 
   # 8. Boosting loop ---------------------------------------------------------
   # Iteration 1
-  res <- .hp_solve(y, CH)
-  f_hat <- res$trend
-  u     <- res$cycle
+  # Each pass re-smooths the running residual u; the accumulated trend is
+  # always y - u.
+  u     <- .hp_fast(y, CH = CH)
+  f_hat <- y - u
 
   final_iter  <- 1L
   final_trend <- f_hat
@@ -154,9 +145,8 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   # Iterations 2..iter_max
   if (iter_max > 1L) {
     for (k in 2L:iter_max) {
-      res_k <- .hp_solve(u, CH)
-      f_hat <- f_hat + res_k$trend
-      u     <- res_k$cycle
+      u     <- .hp_fast(u, CH = CH)
+      f_hat <- y - u
 
       if (stopping == "fixed") {
         final_iter  <- k
@@ -235,19 +225,4 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   )
 
   new_macrofilter(trend = final_trend, data = y, meta = meta, bands = ci_bands)
-}
-
-# ── Internal helper ─────────────────────────────────────────────────────────
-#' Apply one HP smoothing pass given a precomputed system factor
-#'
-#' @param y Numeric vector to smooth.
-#' @param Q Precomputed HP system: either the sparse matrix `I + lambda * D'D`
-#'   or its Cholesky factor from [Matrix::Cholesky()]; both dispatch through
-#'   [Matrix::solve()].
-#' @return A list with `trend` and `cycle` numeric vectors.
-#' @noRd
-#' @keywords internal
-.hp_solve <- function(y, Q) {
-  trend <- as.numeric(Matrix::solve(Q, y))
-  list(trend = trend, cycle = y - trend)
 }

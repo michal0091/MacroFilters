@@ -30,8 +30,9 @@
 #' where \eqn{D} is the second-difference operator.
 #'
 #' The implementation builds \eqn{D} as a banded sparse matrix
-#' ([Matrix::bandSparse()]) and solves the symmetric positive-definite system
-#' with a sparse Cholesky decomposition ([Matrix::solve()]).
+#' ([Matrix::bandSparse()]), factorizes the symmetric positive-definite system
+#' once with a sparse Cholesky decomposition ([Matrix::Cholesky()]) and reuses
+#' that factor for the bootstrap replicates.
 #'
 #' When `lambda` is not supplied the Ravn-Uhlig (2002) rule is applied:
 #' `lambda = 6.25 * freq^4`, yielding 6.25 (annual), 1600 (quarterly), and
@@ -85,36 +86,21 @@ hp_filter <- function(x, lambda = NULL, freq = NULL,
     lambda <- 6.25 * freq_lambda^4
   }
 
-  # 4-6. Sparse solve (timed) ------------------------------------------------
+  # 4-5. Sparse Cholesky solve (timed) --------------------------------------
   t0 <- proc.time()
 
-  # 4. Second-difference matrix D: (n-2) x n, bands at k = 0, 1, 2
-  D <- Matrix::bandSparse(
-    n    = n - 2L,
-    m    = n,
-    k    = c(0L, 1L, 2L),
-    diagonals = list(
-      rep(1,  n - 2L),
-      rep(-2, n - 2L),
-      rep(1,  n - 2L)
-    )
-  )
-
-  # 5. Pentadiagonal system matrix Q = I + lambda * D'D
-  Q <- Matrix::Diagonal(n) + lambda * Matrix::crossprod(D)
-
-  # 6. Solve for trend
-  trend_num <- as.numeric(Matrix::solve(Q, y))
-  cycle_num <- y - trend_num
+  # Factorize Q = I + lambda * D'D once; reused by every bootstrap replicate.
+  CH        <- .build_hp_cholesky(n, lambda)
+  cycle_num <- .hp_fast(y, CH = CH)
+  trend_num <- y - cycle_num
 
   elapsed <- (proc.time() - t0)[["elapsed"]]
 
-  # 7. Optional block bootstrap ----------------------------------------------
+  # 6. Optional block bootstrap ----------------------------------------------
   ci_bands <- NULL
   if (boot_iter > 0L) {
     bs <- .resolve_block_size(.frequency_or_default(freq_detected, 1),
                               block_size, n)
-    CH <- .build_hp_cholesky(n, lambda)        # factorize once, reuse per replicate
     ff <- function(y_b) y_b - .hp_fast(y_b, CH = CH)
     ci_bands <- .boot_engine(
       filter_func = ff,
@@ -125,7 +111,7 @@ hp_filter <- function(x, lambda = NULL, freq = NULL,
     )
   }
 
-  # 8. Build S3 result --------------------------------------------------------
+  # 7. Build S3 result --------------------------------------------------------
   meta <- list(
     method       = "HP",
     lambda       = lambda,

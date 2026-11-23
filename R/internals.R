@@ -1,11 +1,29 @@
 # ── Internal utilities (not exported) ─────────────────────────────────────────
 
+#' Build the HP system matrix
+#'
+#' Constructs the second-difference matrix `D` and returns the pentadiagonal
+#' HP system `Q = I + lambda * D'D`.
+#'
+#' @param n Integer length of the series (must be >= 3).
+#' @param lambda Numeric smoothing parameter.
+#' @return A sparse symmetric matrix.
+#' @keywords internal
+#' @noRd
+.hp_system_matrix <- function(n, lambda) {
+  D <- Matrix::bandSparse(
+    n - 2L, n,
+    k         = c(0L, 1L, 2L),
+    diagonals = list(rep(1, n - 2L), rep(-2, n - 2L), rep(1, n - 2L))
+  )
+  Matrix::Diagonal(n) + lambda * Matrix::crossprod(D)
+}
+
 #' Build the pre-factorized Cholesky of the HP system matrix
 #'
-#' Constructs the second-difference matrix `D` and factorizes the HP system
-#' `Q = I + lambda * D'D` once, so the (expensive) factorization can be reused
-#' across every bootstrap replicate and every bHP inner iteration instead of
-#' being recomputed on each [Matrix::solve()] call.
+#' Factorizes the HP system `Q = I + lambda * D'D` once, so the (expensive)
+#' factorization can be reused across every bootstrap replicate and every bHP
+#' inner iteration instead of being recomputed on each [Matrix::solve()] call.
 #'
 #' @param n Integer length of the series (must be >= 3).
 #' @param lambda Numeric smoothing parameter.
@@ -13,13 +31,7 @@
 #' @keywords internal
 #' @noRd
 .build_hp_cholesky <- function(n, lambda) {
-  D <- Matrix::bandSparse(
-    n - 2L, n,
-    k         = c(0L, 1L, 2L),
-    diagonals = list(rep(1, n - 2L), rep(-2, n - 2L), rep(1, n - 2L))
-  )
-  Q <- Matrix::Diagonal(n) + lambda * Matrix::crossprod(D)
-  Matrix::Cholesky(Matrix::forceSymmetric(Q))
+  Matrix::Cholesky(Matrix::forceSymmetric(.hp_system_matrix(n, lambda)))
 }
 
 #' Fast HP cycle for internal calibration and bootstrap
