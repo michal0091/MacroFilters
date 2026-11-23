@@ -257,8 +257,9 @@ es_raw <- read_fred("CLVMNACSCAB1GQES")
 
 ```{r mbh-demo}
 # Apply HP + MBH per country.
-# For log-level series, auto d (MAD of diff) is too tight — calibrate d on the
-# cycle scale instead (see vignette "Hyperparameter Tuning for the MBH Filter").
+# d = mad(hp$cycle) is what d = "auto" computes for a quarterly ts; it is
+# written out to show the cycle-scale calibration (see vignette
+# "Hyperparameter Tuning for the MBH Filter").
 make_trend_df <- function(raw, country) {
   dt  <- raw[raw$date >= as.Date("2000-01-01"), ]
   g   <- ts(dt$gdp_log, start = c(2000, 1), frequency = 4)

@@ -98,6 +98,9 @@
 #'   line; all long-run variance is pushed into the cycle component, defeating
 #'   the purpose of the filter. Treat `select_mstop = TRUE` as an
 #'   experimental option and validate visually before relying on it.
+#'
+#'   `select_mstop` will be deprecated in MacroFilters 0.3.0 and removed once
+#'   `mstop` can be selected by blocked cross-validation.
 #' @param boundary.knots A numeric vector of length 2 specifying the global
 #'   domain for the B-spline basis (e.g., `c(1, T_max)`). If `NULL` (default),
 #'   the range of `time_idx` is used. For real-time stability, fix this to the

@@ -102,7 +102,10 @@ hyper-aggressively. In practice the algorithm stops at iteration ~5–15
 instead of the intended ~500. The resulting trend is nearly a straight
 line; all long-run variance is pushed into the cycle component, defeating
 the purpose of the filter. Treat \code{select_mstop = TRUE} as an
-experimental option and validate visually before relying on it.}
+experimental option and validate visually before relying on it.
+
+\code{select_mstop} will be deprecated in MacroFilters 0.3.0 and removed once
+\code{mstop} can be selected by blocked cross-validation.}
 
 \item{boundary.knots}{A numeric vector of length 2 specifying the global
 domain for the B-spline basis (e.g., \code{c(1, T_max)}). If \code{NULL} (default),

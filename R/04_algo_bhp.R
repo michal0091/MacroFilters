@@ -39,9 +39,12 @@
 #'
 #' \describe{
 #'   \item{`"bic"`}{Schwarz information criterion computed as
-#'     \eqn{n \log(\hat\sigma^2) + \log(n)\,\mathrm{tr}(S^m)},
-#'     where \eqn{S^m} is the iterated smoother.  Iteration stops when the BIC
-#'     increases relative to the previous best.}
+#'     \eqn{n \log(\hat\sigma^2) + \log(n)\,\mathrm{tr}(B_m)},
+#'     where \eqn{B_m = I - (I - S)^m} is the smoother after \eqn{m}
+#'     boosting passes and \eqn{S} the HP smoother, so
+#'     \eqn{\mathrm{tr}(B_m) = n - \sum_i (1 - s_i)^m} with \eqn{s_i} the
+#'     eigenvalues of \eqn{S}.  Iteration stops when the BIC increases
+#'     relative to the previous best.}
 #'   \item{`"adf"`}{Augmented Dickey-Fuller test on the residual.  Iteration
 #'     stops when the residual is stationary at level `sig_level`.}
 #'   \item{`"fixed"`}{Runs exactly `iter_max` iterations.}
