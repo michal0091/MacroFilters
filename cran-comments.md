@@ -17,6 +17,8 @@ See NEWS.md for the full list.
   - linux, R-devel (2026-11-21 r90959), Ubuntu 26.04.1 LTS — Status: OK
   - windows, R-devel (2026-11-17 r90926 ucrt), Windows Server 2022 — Status: OK
   - macos, R-devel (2026-11-23 r90962), macOS Sequoia 15.7.9 (x86_64) — Status: OK
+* GitHub Actions (R-CMD-check): ubuntu (R-release, R-devel), windows
+  (R-release), macOS arm64 (R-release) — Status: OK
 
 ## R CMD check results
 
