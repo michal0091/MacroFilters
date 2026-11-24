@@ -38,9 +38,7 @@ A practical equivalence: `(mstop = 500, nu = 0.1)` and
 y <- us_gdp_vintage$gdp_log
 
 res_default <- mbh_filter(y, mstop = 500,  nu = 0.10)
-#> Info: Huber threshold automatically calibrated to d = 0.004450 via HP cyclical MAD.
 res_equiv   <- mbh_filter(y, mstop = 1000, nu = 0.05)
-#> Info: Huber threshold automatically calibrated to d = 0.004450 via HP cyclical MAD.
 
 max_diff <- max(abs(res_default$trend - res_equiv$trend))
 cat(sprintf("Max trend difference (mstop×nu equivalence): %.2e\n", max_diff))
@@ -141,7 +139,6 @@ growth-rate standards. This makes growth rates an ideal stress test for
 y_growth <- diff(us_gdp_vintage$gdp_log)   # quarterly log-differences
 
 res_auto   <- mbh_filter(y_growth)
-#> Info: Huber threshold automatically calibrated to d = 0.005430 via HP cyclical MAD.
 res_strict <- mbh_filter(y_growth, d = 0.005)
 res_lenient <- mbh_filter(y_growth, d = 0.02)
 
@@ -261,16 +258,16 @@ knitr::kable(
 
 | mstop | Wall time (s) | Cycle SD |
 |------:|--------------:|---------:|
-|   100 |         0.043 | 0.663846 |
-|   200 |         0.067 | 0.625541 |
-|   300 |         0.090 | 0.587335 |
-|   400 |         0.122 | 0.549249 |
-|   500 |         0.139 | 0.511309 |
-|   600 |         0.155 | 0.473548 |
-|   700 |         0.177 | 0.436016 |
-|   800 |         0.193 | 0.398778 |
-|   900 |         0.208 | 0.361931 |
-|  1000 |         0.223 | 0.325643 |
+|   100 |         0.036 | 0.663846 |
+|   200 |         0.053 | 0.625541 |
+|   300 |         0.070 | 0.587335 |
+|   400 |         0.096 | 0.549249 |
+|   500 |         0.114 | 0.511309 |
+|   600 |         0.131 | 0.473548 |
+|   700 |         0.149 | 0.436016 |
+|   800 |         0.159 | 0.398778 |
+|   900 |         0.172 | 0.361931 |
+|  1000 |         0.183 | 0.325643 |
 
 MBH computational benchmark — US log GDP (316 obs) {.table}
 

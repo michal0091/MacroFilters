@@ -29,7 +29,6 @@ trend through a single argument, `boot_iter`.
 ``` r
 
 fit <- mbh_filter(fr, boot_iter = 50L)   # mstop defaults to 500
-#> Info: Huber threshold automatically calibrated to d = 0.010139 via HP cyclical MAD.
 str(fit[c("trend_lower", "trend_upper")], max.level = 1)
 #> List of 2
 #>  $ trend_lower: num [1:185] 12.5 12.5 12.5 12.5 12.5 ...
@@ -85,7 +84,6 @@ Two knobs control it:
 
 # Quarterly data -> auto block size = 2 * 4 = 8
 fit_b <- mbh_filter(fr, boot_iter = 50L, block_size = 8L)
-#> Info: Huber threshold automatically calibrated to d = 0.010139 via HP cyclical MAD.
 ```
 
 ------------------------------------------------------------------------
@@ -121,7 +119,6 @@ autoplot(hamilton_filter(fr, boot_iter = 50L))
 ``` r
 
 autoplot(mbh_filter(fr,      boot_iter = 50L))
-#> Info: Huber threshold automatically calibrated to d = 0.010139 via HP cyclical MAD.
 ```
 
 ![](uncertainty_bands_files/figure-html/all-filters-4.png)

@@ -24,9 +24,13 @@ hp_filter(x, lambda = NULL, freq = NULL, boot_iter = 0, block_size = "auto")
 
 - freq:
 
-  Numeric frequency override (1 = annual, 4 = quarterly, 12 = monthly).
-  Used only when `lambda` is `NULL` and the frequency cannot be inferred
-  from `x`.
+  Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly, 52 =
+  weekly), used only when it cannot be read from `x`: a plain numeric
+  vector, or a `zoo`/`xts` object without a regular calendar index. It
+  sets the default `lambda` and the `"auto"` bootstrap block size. A
+  `ts` attribute or a regular `Date`, `POSIXct`, `yearqtr` or `yearmon`
+  index takes precedence; a `freq` that contradicts it is ignored with a
+  warning.
 
 - boot_iter:
 
@@ -44,13 +48,17 @@ hp_filter(x, lambda = NULL, freq = NULL, boot_iter = 0, block_size = "auto")
 
   Positive integer or `"auto"`. Block length for the moving-block
   bootstrap (used only when `boot_iter > 0`). If `"auto"` (default), it
-  is set to `2 * stats::frequency(x)` (two full cycles), bounded above
-  by `floor(length(x) / 3)` to keep at least three blocks.
+  is set to `2 * freq` (two full cycles), bounded above by
+  `floor(length(x) / 3)` to keep at least three blocks. `freq` is read
+  from `x` (a `ts` attribute or a regular `Date`, `POSIXct`, `yearqtr`
+  or `yearmon` index), else taken from the `freq` argument; when neither
+  is available it is `1`.
 
 ## Value
 
 A list of class `c("macrofilter", "list")` with `trend`, `cycle`,
-`data`, and `meta`. When `boot_iter > 0` it also carries `trend_lower`
+`data`, and `meta`. `meta$freq` is the frequency read from `x` or `freq`
+(`NA` when unknown). When `boot_iter > 0` it also carries `trend_lower`
 and `trend_upper` (95% normal-approximation bootstrap band).
 
 ## Details
@@ -61,10 +69,11 @@ The HP filter minimises \$\$\sum (y_t - \tau_t)^2 + \lambda \sum
 operator.
 
 The implementation builds \\D\\ as a banded sparse matrix
-([`Matrix::bandSparse()`](https://rdrr.io/pkg/Matrix/man/bandSparse.html))
-and solves the symmetric positive-definite system with a sparse Cholesky
-decomposition
-([`Matrix::solve()`](https://rdrr.io/pkg/Matrix/man/solve-methods.html)).
+([`Matrix::bandSparse()`](https://rdrr.io/pkg/Matrix/man/bandSparse.html)),
+factorizes the symmetric positive-definite system once with a sparse
+Cholesky decomposition
+([`Matrix::Cholesky()`](https://rdrr.io/pkg/Matrix/man/Cholesky-methods.html))
+and reuses that factor for the bootstrap replicates.
 
 When `lambda` is not supplied the Ravn-Uhlig (2002) rule is applied:
 `lambda = 6.25 * freq^4`, yielding 6.25 (annual), 1600 (quarterly), and
@@ -89,7 +98,7 @@ result <- hp_filter(y)
 print(result)
 #> -- MacroFilter [HP] --
 #>    Observations : 200
-#>    Parameters   : lambda = 1600
+#>    Parameters   : lambda = 1600, freq = 4
 #>    Cycle range  : [-2.803, 4.151]  sd = 1.189
-#>    Compute time : 0.003 s
+#>    Compute time : 0.002 s
 ```

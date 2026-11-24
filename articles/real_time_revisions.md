@@ -168,20 +168,16 @@ y_demo  <- us_gdp_vintage$gdp_log[seq_len(n_demo)]
 
 res_free      <- mbh_filter(y_demo, knots = fixed_knots, df = fixed_df,
                              mstop = fixed_mstop, boundary.knots = NULL)
-#> Info: Huber threshold automatically calibrated to d = 0.005570 via HP cyclical MAD.
 res_anchored  <- mbh_filter(y_demo, knots = fixed_knots, df = fixed_df,
                              mstop = fixed_mstop, boundary.knots = fixed_bounds)
-#> Info: Huber threshold automatically calibrated to d = 0.005570 via HP cyclical MAD.
 
 # Extend by one observation and refit
 y_demo_p1 <- us_gdp_vintage$gdp_log[seq_len(n_demo + 1L)]
 
 res_free_p1     <- mbh_filter(y_demo_p1, knots = fixed_knots, df = fixed_df,
                                mstop = fixed_mstop, boundary.knots = NULL)
-#> Info: Huber threshold automatically calibrated to d = 0.005547 via HP cyclical MAD.
 res_anchored_p1 <- mbh_filter(y_demo_p1, knots = fixed_knots, df = fixed_df,
                                mstop = fixed_mstop, boundary.knots = fixed_bounds)
-#> Info: Huber threshold automatically calibrated to d = 0.005547 via HP cyclical MAD.
 
 # Revision at the final shared observation (position n_demo)
 rev_free     <- abs(res_free_p1$trend[n_demo]     - res_free$trend[n_demo])

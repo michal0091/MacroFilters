@@ -71,16 +71,19 @@ All functions return a list of class `c("macrofilter", "list")`.
 
 library(MacroFilters)
 
-# Fast, agnostic filtering on any time-series object
-hp_result  <- hp_filter(us_gdp_xts)
-mbh_result <- mbh_filter(us_gdp_xts)
+# US real GDP (log) since 2000 as a quarterly ts; xts and zoo work too
+us  <- us_gdp_vintage[us_gdp_vintage$date >= as.Date("2000-01-01"), ]
+gdp <- ts(us$gdp_log, start = c(2000, 1), frequency = 4)
+
+hp_result  <- hp_filter(gdp)
+mbh_result <- mbh_filter(gdp)
 
 # Access components directly
 mbh_result$trend
 mbh_result$cycle
 
 # Add 95% bootstrap confidence bands and plot them
-mbh_ci <- mbh_filter(us_gdp_xts, boot_iter = 50L)
+mbh_ci <- mbh_filter(gdp, boot_iter = 50L)
 autoplot(mbh_ci)            # ggplot: trend, observed series and confidence ribbon
 ```
 

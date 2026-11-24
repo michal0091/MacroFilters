@@ -26,13 +26,19 @@ autoplot(object, ...)
 
 A `ggplot` object.
 
+## Details
+
+The x axis uses the time stamps of the original input: decimal time for
+a `ts`, `yearqtr` or `yearmon` index, dates for a `Date` or `POSIXct`
+index (`xts`/`zoo`), and the positions `1..n` for a plain numeric
+vector.
+
 ## Examples
 
 ``` r
 # \donttest{
 y <- ts(cumsum(rnorm(120)), start = c(2000, 1), frequency = 4)
 autoplot(mbh_filter(y, mstop = 100L, boot_iter = 50L))
-#> Info: Huber threshold automatically calibrated to d = 1.275492 via HP cyclical MAD.
 
 # }
 ```

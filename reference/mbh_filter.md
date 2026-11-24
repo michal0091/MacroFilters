@@ -19,7 +19,8 @@ mbh_filter(
   df = 4L,
   select_mstop = FALSE,
   boundary.knots = NULL,
-  hp_lambda = NULL
+  hp_lambda = NULL,
+  freq = NULL
 )
 ```
 
@@ -32,13 +33,14 @@ mbh_filter(
 - d:
 
   Numeric or `"auto"`. The delta parameter for Huber loss. If `"auto"`
-  (default), it is calibrated as `stats::mad(.hp_fast(x))`, i.e. the MAD
-  of the HP cyclical residual. This anchors the threshold to the
+  (default), it is calibrated as the MAD of the HP cyclical residual (HP
+  smoothing set by `hp_lambda`). This anchors the threshold to the
   output-gap scale rather than the growth-rate scale, avoiding the
   under-truncation failure mode of the legacy `mad(diff(y))` heuristic.
-  A [`message()`](https://rdrr.io/r/base/message.html) is emitted
-  reporting the exact value chosen. Supply an explicit positive numeric
-  to override.
+  The value chosen is stored in `meta$d`; set
+  `options(MacroFilters.verbose = TRUE)` to also report it with a
+  [`message()`](https://rdrr.io/r/base/message.html). Supply an explicit
+  positive numeric to override.
 
 - boot_iter:
 
@@ -56,8 +58,11 @@ mbh_filter(
 
   Positive integer or `"auto"`. Block length for the moving-block
   bootstrap (used only when `boot_iter > 0`). If `"auto"` (default), it
-  is set to `2 * stats::frequency(x)` (two full cycles), bounded above
-  by `floor(length(x) / 3)` to keep at least three blocks.
+  is set to `2 * freq` (two full cycles), bounded above by
+  `floor(length(x) / 3)` to keep at least three blocks. `freq` is read
+  from `x` (a `ts` attribute or a regular `Date`, `POSIXct`, `yearqtr`
+  or `yearmon` index), else taken from the `freq` argument; when neither
+  is available it is `1`.
 
 - knots:
 
@@ -121,6 +126,9 @@ mbh_filter(
   defeating the purpose of the filter. Treat `select_mstop = TRUE` as an
   experimental option and validate visually before relying on it.
 
+  `select_mstop` will be deprecated in MacroFilters 0.3.0 and removed
+  once `mstop` can be selected by blocked cross-validation.
+
 - boundary.knots:
 
   A numeric vector of length 2 specifying the global domain for the
@@ -132,12 +140,22 @@ mbh_filter(
 
   Numeric or `NULL`. Smoothing parameter for the internal HP filter used
   to auto-calibrate `d` (only relevant when `d = "auto"`). If `NULL`
-  (default), it is derived from `stats::frequency(x)` via the Ravn-Uhlig
-  rule. **Supply this when `x` is a plain numeric vector whose true
-  frequency is not annual**, since
-  [`frequency()`](https://rdrr.io/r/stats/time.html) returns `1` for
-  unclassed vectors and would otherwise under-smooth the calibration
-  cycle (e.g. monthly data: `hp_lambda = 129600`).
+  (default), it is derived from the series frequency via the Ravn-Uhlig
+  rule (`6.25 * freq^4`). **Supply this, or `freq`, when `x` is a plain
+  numeric vector whose true frequency is not annual**: without either, a
+  plain vector is treated as annual and the calibration cycle is
+  under-smoothed (e.g. monthly data: `freq = 12` or
+  `hp_lambda = 129600`).
+
+- freq:
+
+  Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly, 52 =
+  weekly), used only when it cannot be read from `x`: a plain numeric
+  vector, or a `zoo`/`xts` object without a regular calendar index. It
+  sets the default `hp_lambda` and the `"auto"` bootstrap block size. A
+  `ts` attribute or a regular `Date`, `POSIXct`, `yearqtr` or `yearmon`
+  index takes precedence; a `freq` that contradicts it is ignored with a
+  warning.
 
 ## Value
 
@@ -158,7 +176,7 @@ A list of class `c("macrofilter", "list")` with:
 - `$meta`:
 
   Named list: `method`, `knots`, `d`, `mstop`, `nu`, `df`,
-  `select_mstop`, `compute_time`.
+  `select_mstop`, `freq` (`NA` when unknown), `compute_time`.
 
 - `$trend_lower`, `$trend_upper`:
 
@@ -221,24 +239,22 @@ The defaults guard against all three:
 set.seed(42)
 y <- ts(cumsum(rnorm(80)), start = c(2000, 1), frequency = 4)
 result <- mbh_filter(y, mstop = 100L)
-#> Info: Huber threshold automatically calibrated to d = 1.627402 via HP cyclical MAD.
 print(result)
 #> -- MacroFilter [MBH] --
 #>    Observations : 80
-#>    Parameters   : knots = 40, d = 1.627, mstop = 100, mstop_initial = 100, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Parameters   : knots = 40, d = 1.627, mstop = 100, mstop_initial = 100, nu = 0.1, df = 4, select_mstop = FALSE, freq = 4
 #>    Cycle range  : [-2.66, 4.533]  sd = 1.518
-#>    Compute time : 0.026 s
+#>    Compute time : 0.021 s
 
 # \donttest{
 # Full example with default parameters
 y2 <- ts(cumsum(rnorm(200)), start = c(2000, 1), frequency = 4)
 result2 <- mbh_filter(y2)
-#> Info: Huber threshold automatically calibrated to d = 1.161531 via HP cyclical MAD.
 print(result2)
 #> -- MacroFilter [MBH] --
 #>    Observations : 200
-#>    Parameters   : knots = 100, d = 1.162, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Parameters   : knots = 100, d = 1.162, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE, freq = 4
 #>    Cycle range  : [-4.077, 3.726]  sd = 1.419
-#>    Compute time : 0.138 s
+#>    Compute time : 0.119 s
 # }
 ```

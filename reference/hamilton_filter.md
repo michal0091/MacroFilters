@@ -8,7 +8,14 @@ y\_{t-1}, \ldots, y\_{t-p+1})\\, and the cycle is the residual.
 ## Usage
 
 ``` r
-hamilton_filter(x, h = NULL, p = 4L, boot_iter = 0, block_size = "auto")
+hamilton_filter(
+  x,
+  h = NULL,
+  p = 4L,
+  boot_iter = 0,
+  block_size = "auto",
+  freq = NULL
+)
 ```
 
 ## Arguments
@@ -21,7 +28,8 @@ hamilton_filter(x, h = NULL, p = 4L, boot_iter = 0, block_size = "auto")
 
   Integer horizon (number of periods ahead). If `NULL` (default),
   auto-detected from the series frequency using Hamilton's rule: annual
-  = 2, quarterly = 8, monthly = 24.
+  = 2, quarterly = 8, monthly = 24, and `2 * freq` for any other
+  frequency.
 
 - p:
 
@@ -43,18 +51,31 @@ hamilton_filter(x, h = NULL, p = 4L, boot_iter = 0, block_size = "auto")
 
   Positive integer or `"auto"`. Block length for the moving-block
   bootstrap (used only when `boot_iter > 0`). If `"auto"` (default), it
-  is set to `2 * stats::frequency(x)` (two full cycles), bounded above
-  by `floor(length(x) / 3)` to keep at least three blocks.
+  is set to `2 * freq` (two full cycles), bounded above by
+  `floor(length(x) / 3)` to keep at least three blocks. `freq` is read
+  from `x` (a `ts` attribute or a regular `Date`, `POSIXct`, `yearqtr`
+  or `yearmon` index), else taken from the `freq` argument; when neither
+  is available it is `1`.
+
+- freq:
+
+  Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly, 52 =
+  weekly), used only when it cannot be read from `x`: a plain numeric
+  vector, or a `zoo`/`xts` object without a regular calendar index. It
+  sets the default `h` and the `"auto"` bootstrap block size. A `ts`
+  attribute or a regular `Date`, `POSIXct`, `yearqtr` or `yearmon` index
+  takes precedence; a `freq` that contradicts it is ignored with a
+  warning.
 
 ## Value
 
 A list of class `c("macrofilter", "list")` with `trend`, `cycle`,
-`data`, and `meta` (`h`, `p`, `coefficients`, `compute_time`). When
-`boot_iter > 0` it also carries `trend_lower` and `trend_upper` (95%
-normal-approximation band). The bootstrap is a residual bootstrap
-conditional on the initial `h + p - 1` observations (the regression
-lead-in is held fixed); band entries for those lead-in positions are
-`NA`.
+`data`, and `meta` (`h`, `p`, `coefficients`, `freq`, `compute_time`;
+`freq` is `NA` when the frequency is unknown). When `boot_iter > 0` it
+also carries `trend_lower` and `trend_upper` (95% normal-approximation
+band). The bootstrap is a residual bootstrap conditional on the initial
+`h + p - 1` observations (the regression lead-in is held fixed); band
+entries for those lead-in positions are `NA`.
 
 ## Details
 
@@ -95,7 +116,7 @@ result <- hamilton_filter(y)
 print(result)
 #> -- MacroFilter [Hamilton] --
 #>    Observations : 200
-#>    Parameters   : h = 8, p = 4
+#>    Parameters   : h = 8, p = 4, freq = 4
 #>    Cycle range  : [-6.344, 4.538]  sd = 2.119
-#>    Compute time : 0.000 s
+#>    Compute time : 0.001 s
 ```

@@ -48,9 +48,13 @@ bhp_filter(
 
 - freq:
 
-  Numeric frequency override (1 = annual, 4 = quarterly, 12 = monthly).
-  Used only when `lambda` is `NULL` and the frequency cannot be inferred
-  from `x`.
+  Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly, 52 =
+  weekly), used only when it cannot be read from `x`: a plain numeric
+  vector, or a `zoo`/`xts` object without a regular calendar index. It
+  sets the default `lambda` and the `"auto"` bootstrap block size. A
+  `ts` attribute or a regular `Date`, `POSIXct`, `yearqtr` or `yearmon`
+  index takes precedence; a `freq` that contradicts it is ignored with a
+  warning.
 
 - boot_iter:
 
@@ -68,14 +72,18 @@ bhp_filter(
 
   Positive integer or `"auto"`. Block length for the moving-block
   bootstrap (used only when `boot_iter > 0`). If `"auto"` (default), it
-  is set to `2 * stats::frequency(x)` (two full cycles), bounded above
-  by `floor(length(x) / 3)` to keep at least three blocks.
+  is set to `2 * freq` (two full cycles), bounded above by
+  `floor(length(x) / 3)` to keep at least three blocks. `freq` is read
+  from `x` (a `ts` attribute or a regular `Date`, `POSIXct`, `yearqtr`
+  or `yearmon` index), else taken from the `freq` argument; when neither
+  is available it is `1`.
 
 ## Value
 
 A list of class `c("macrofilter", "list")` with `trend`, `cycle`,
 `data`, and `meta` (`method = "bHP"`, `lambda`, `iterations`,
-`stopping_rule`, `compute_time`). When `boot_iter > 0` it also carries
+`stopping_rule`, `freq`, `compute_time`; `freq` is `NA` when the
+frequency is unknown). When `boot_iter > 0` it also carries
 `trend_lower` and `trend_upper` (95% normal-approximation bootstrap
 band); each bootstrap refit runs a *fixed* `iterations` passes,
 conditioning on the complexity selected by the base fit.
@@ -90,8 +98,11 @@ when one of the following criteria is met:
 - `"bic"`:
 
   Schwarz information criterion computed as \\n \log(\hat\sigma^2) +
-  \log(n)\\\mathrm{tr}(S^m)\\, where \\S^m\\ is the iterated smoother.
-  Iteration stops when the BIC increases relative to the previous best.
+  \log(n)\\\mathrm{tr}(B_m)\\, where \\B_m = I - (I - S)^m\\ is the
+  smoother after \\m\\ boosting passes and \\S\\ the HP smoother, so
+  \\\mathrm{tr}(B_m) = n - \sum_i (1 - s_i)^m\\ with \\s_i\\ the
+  eigenvalues of \\S\\. Iteration stops when the BIC increases relative
+  to the previous best.
 
 - `"adf"`:
 
@@ -116,7 +127,7 @@ result <- bhp_filter(y)
 print(result)
 #> -- MacroFilter [bHP] --
 #>    Observations : 200
-#>    Parameters   : lambda = 1600, iterations = 100, stopping_rule = bic
+#>    Parameters   : lambda = 1600, iterations = 100, stopping_rule = bic, freq = 4
 #>    Cycle range  : [-1.657, 1.673]  sd = 0.6962
-#>    Compute time : 0.005 s
+#>    Compute time : 0.004 s
 ```

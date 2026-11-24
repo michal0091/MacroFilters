@@ -119,7 +119,7 @@ hp <- hp_filter(y)
 hp
 #> -- MacroFilter [HP] --
 #>    Observations : 100
-#>    Parameters   : lambda = 1600
+#>    Parameters   : lambda = 1600, freq = 4
 #>    Cycle range  : [-7.738, 9.143]  sd = 3.897
 #>    Compute time : 0.002 s
 ```
@@ -166,9 +166,9 @@ ham <- hamilton_filter(y)      # auto-detects h = 8 for quarterly
 ham
 #> -- MacroFilter [Hamilton] --
 #>    Observations : 100
-#>    Parameters   : h = 8, p = 4
+#>    Parameters   : h = 8, p = 4, freq = 4
 #>    Cycle range  : [-13.41, 11.8]  sd = 7.212
-#>    Compute time : 0.000 s
+#>    Compute time : 0.001 s
 ```
 
 Note that the first $`h + p - 1`$ observations of the trend and cycle
@@ -202,9 +202,9 @@ bhp <- bhp_filter(y, stopping = "bic")
 bhp
 #> -- MacroFilter [bHP] --
 #>    Observations : 100
-#>    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic
+#>    Parameters   : lambda = 1600, iterations = 47, stopping_rule = bic, freq = 4
 #>    Cycle range  : [-5.487, 4.068]  sd = 1.857
-#>    Compute time : 0.002 s
+#>    Compute time : 0.001 s
 ```
 
 Internally, **MacroFilters** precomputes the sparse penalty matrix
@@ -310,8 +310,9 @@ es_raw <- read_fred("CLVMNACSCAB1GQES")
 ``` r
 
 # Apply HP + MBH per country.
-# For log-level series, auto d (MAD of diff) is too tight — calibrate d on the
-# cycle scale instead (see vignette "Hyperparameter Tuning for the MBH Filter").
+# d = mad(hp$cycle) is what d = "auto" computes for a quarterly ts; it is
+# written out to show the cycle-scale calibration (see vignette
+# "Hyperparameter Tuning for the MBH Filter").
 make_trend_df <- function(raw, country) {
   dt  <- raw[raw$date >= as.Date("2000-01-01"), ]
   g   <- ts(dt$gdp_log, start = c(2000, 1), frequency = 4)
@@ -338,9 +339,9 @@ mbh_res <- mbh_filter(gdp, d = mad(hp_res$cycle))
 mbh_res
 #> -- MacroFilter [MBH] --
 #>    Observations : 105
-#>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE, freq = 4
 #>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
-#>    Compute time : 0.112 s
+#>    Compute time : 0.094 s
 ```
 
 ![](introduction_files/figure-html/mbh-plot-1.png)
@@ -375,9 +376,9 @@ vignette):
 mbh_res
 #> -- MacroFilter [MBH] --
 #>    Observations : 105
-#>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE
+#>    Parameters   : knots = 52, d = 0.01463, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE, freq = 4
 #>    Cycle range  : [-0.2231, 0.03137]  sd = 0.02963
-#>    Compute time : 0.112 s
+#>    Compute time : 0.094 s
 ```
 
 The `print` method shows the method, the number of observations, the key
@@ -404,7 +405,7 @@ max(abs((mbh_res$trend + mbh_res$cycle) - mbh_res$data))  # should be < 1e-9
 ``` r
 
 str(mbh_res$meta)
-#> List of 13
+#> List of 15
 #>  $ method        : chr "MBH"
 #>  $ knots         : int 52
 #>  $ d             : num 0.0146
@@ -414,7 +415,9 @@ str(mbh_res$meta)
 #>  $ df            : int 4
 #>  $ select_mstop  : logi FALSE
 #>  $ boundary.knots: NULL
-#>  $ compute_time  : num 0.112
+#>  $ freq          : num 4
+#>  $ compute_time  : num 0.094
+#>  $ na_lead       : int 0
 #>  $ ts_class      : chr "ts"
 #>  $ tsp           : num [1:3] 2000 2026 4
 #>  $ idx           : NULL
