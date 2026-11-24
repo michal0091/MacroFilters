@@ -15,7 +15,13 @@ test_that("HP: lambda -> 0 returns the data; lambda -> Inf returns the OLS line"
   t <- 1:100
   expect_equal(hp_filter(y, lambda = 1e-12)$trend, y, tolerance = 1e-6)
   ols <- stats::lm.fit(cbind(1, t), y)$fitted.values
-  expect_lt(max(abs(hp_filter(y, lambda = 1e12)$trend - ols)), 1e-3)
+  # By linearity and the linear fixed point, HP(y) - ols = HP(y - ols). The
+  # system has condition number ~1.6e13 at lambda = 1e12, so comparing HP(y)
+  # with ols directly measures rounding error, which depends on the platform
+  # (1.1e-4 on x86_64, 1.3e-3 on macOS arm64). Smoothing the residual keeps
+  # the solution small, and with it the rounding error; the exact gap is
+  # ~8e-8.
+  expect_lt(max(abs(hp_filter(y - ols, lambda = 1e12)$trend)), 1e-6)
 })
 
 # ── 2. Invariance: same result regardless of input class ─────────────────────
