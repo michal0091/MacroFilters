@@ -32,9 +32,12 @@ Stopping rule: \code{"bic"} (default), \code{"adf"}, or \code{"fixed"}.}
 Significance level for the ADF test when \code{stopping = "adf"}
 (default 0.05).}
 
-\item{freq}{Numeric frequency override (1 = annual, 4 = quarterly,
-12 = monthly). Used only when \code{lambda} is \code{NULL} and the frequency cannot
-be inferred from \code{x}.}
+\item{freq}{Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly,
+52 = weekly), used only when it cannot be read from \code{x}: a plain numeric
+vector, or a \code{zoo}/\code{xts} object without a regular calendar index. It sets
+the default \code{lambda} and the \code{"auto"} bootstrap block size. A \code{ts}
+attribute or a regular \code{Date}, \code{POSIXct}, \code{yearqtr} or \code{yearmon} index
+takes precedence; a \code{freq} that contradicts it is ignored with a warning.}
 
 \item{boot_iter}{Non-negative integer.
 Number of block-bootstrap iterations for uncertainty quantification
@@ -48,14 +51,17 @@ See also \code{block_size}.}
 
 \item{block_size}{Positive integer or \code{"auto"}.
 Block length for the moving-block bootstrap (used only when
-\code{boot_iter > 0}). If \code{"auto"} (default), it is set to
-\code{2 * stats::frequency(x)} (two full cycles), bounded above by
-\code{floor(length(x) / 3)} to keep at least three blocks.}
+\code{boot_iter > 0}). If \code{"auto"} (default), it is set to \code{2 * freq} (two
+full cycles), bounded above by \code{floor(length(x) / 3)} to keep at least
+three blocks. \code{freq} is read from \code{x} (a \code{ts} attribute or a regular
+\code{Date}, \code{POSIXct}, \code{yearqtr} or \code{yearmon} index), else taken from the
+\code{freq} argument; when neither is available it is \code{1}.}
 }
 \value{
 A list of class \code{c("macrofilter", "list")} with \code{trend}, \code{cycle},
 \code{data}, and \code{meta} (\code{method = "bHP"}, \code{lambda}, \code{iterations},
-\code{stopping_rule}, \code{compute_time}). When \code{boot_iter > 0} it also carries
+\code{stopping_rule}, \code{freq}, \code{compute_time}; \code{freq} is \code{NA} when the
+frequency is unknown). When \code{boot_iter > 0} it also carries
 \code{trend_lower} and \code{trend_upper} (95\% normal-approximation bootstrap band);
 each bootstrap refit runs a \emph{fixed} \code{iterations} passes, conditioning on
 the complexity selected by the base fit.
@@ -76,9 +82,12 @@ when one of the following criteria is met:
 
 \describe{
 \item{\code{"bic"}}{Schwarz information criterion computed as
-\eqn{n \log(\hat\sigma^2) + \log(n)\,\mathrm{tr}(S^m)},
-where \eqn{S^m} is the iterated smoother.  Iteration stops when the BIC
-increases relative to the previous best.}
+\eqn{n \log(\hat\sigma^2) + \log(n)\,\mathrm{tr}(B_m)},
+where \eqn{B_m = I - (I - S)^m} is the smoother after \eqn{m}
+boosting passes and \eqn{S} the HP smoother, so
+\eqn{\mathrm{tr}(B_m) = n - \sum_i (1 - s_i)^m} with \eqn{s_i} the
+eigenvalues of \eqn{S}.  Iteration stops when the BIC increases
+relative to the previous best.}
 \item{\code{"adf"}}{Augmented Dickey-Fuller test on the residual.  Iteration
 stops when the residual is stationary at level \code{sig_level}.}
 \item{\code{"fixed"}}{Runs exactly \code{iter_max} iterations.}

@@ -34,11 +34,12 @@
 #'   or high-cycle-variance inputs.
 #' @param d Numeric or `"auto"`.
 #'   The delta parameter for Huber loss. If `"auto"` (default), it is
-#'   calibrated as `stats::mad(.hp_fast(x))`, i.e. the MAD of the HP cyclical
-#'   residual. This anchors the threshold to the output-gap scale rather than
+#'   calibrated as the MAD of the HP cyclical residual (HP smoothing set by
+#'   `hp_lambda`). This anchors the threshold to the output-gap scale rather than
 #'   the growth-rate scale, avoiding the under-truncation failure mode of the
-#'   legacy `mad(diff(y))` heuristic. A `message()` is emitted reporting the
-#'   exact value chosen. Supply an explicit positive numeric to override.
+#'   legacy `mad(diff(y))` heuristic. The value chosen is stored in `meta$d`;
+#'   set `options(MacroFilters.verbose = TRUE)` to also report it with a
+#'   `message()`. Supply an explicit positive numeric to override.
 #' @param boot_iter Non-negative integer.
 #'   Number of block-bootstrap iterations for uncertainty quantification
 #'   (default `0`, bootstrap disabled). When `> 0`, the function adds
@@ -50,16 +51,25 @@
 #'   See also `block_size`.
 #' @param block_size Positive integer or `"auto"`.
 #'   Block length for the moving-block bootstrap (used only when
-#'   `boot_iter > 0`). If `"auto"` (default), it is set to
-#'   `2 * stats::frequency(x)` (two full cycles), bounded above by
-#'   `floor(length(x) / 3)` to keep at least three blocks.
+#'   `boot_iter > 0`). If `"auto"` (default), it is set to `2 * freq` (two
+#'   full cycles), bounded above by `floor(length(x) / 3)` to keep at least
+#'   three blocks. `freq` is read from `x` (a `ts` attribute or a regular
+#'   `Date`, `POSIXct`, `yearqtr` or `yearmon` index), else taken from the
+#'   `freq` argument; when neither is available it is `1`.
 #' @param hp_lambda Numeric or `NULL`.
 #'   Smoothing parameter for the internal HP filter used to auto-calibrate
 #'   `d` (only relevant when `d = "auto"`). If `NULL` (default), it is derived
-#'   from `stats::frequency(x)` via the Ravn-Uhlig rule. **Supply this when
-#'   `x` is a plain numeric vector whose true frequency is not annual**, since
-#'   `frequency()` returns `1` for unclassed vectors and would otherwise
-#'   under-smooth the calibration cycle (e.g. monthly data: `hp_lambda = 129600`).
+#'   from the series frequency via the Ravn-Uhlig rule (`6.25 * freq^4`).
+#'   **Supply this, or `freq`, when `x` is a plain numeric vector whose true
+#'   frequency is not annual**: without either, a plain vector is treated as
+#'   annual and the calibration cycle is under-smoothed (e.g. monthly data:
+#'   `freq = 12` or `hp_lambda = 129600`).
+#' @param freq Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly,
+#'   52 = weekly), used only when it cannot be read from `x`: a plain numeric
+#'   vector, or a `zoo`/`xts` object without a regular calendar index. It sets
+#'   the default `hp_lambda` and the `"auto"` bootstrap block size. A `ts`
+#'   attribute or a regular `Date`, `POSIXct`, `yearqtr` or `yearmon` index
+#'   takes precedence; a `freq` that contradicts it is ignored with a warning.
 #' @param nu Numeric.
 #'   The learning rate (shrinkage) for boosting (default 0.1).
 #' @param df Integer.
@@ -88,6 +98,9 @@
 #'   line; all long-run variance is pushed into the cycle component, defeating
 #'   the purpose of the filter. Treat `select_mstop = TRUE` as an
 #'   experimental option and validate visually before relying on it.
+#'
+#'   `select_mstop` will be deprecated in MacroFilters 0.3.0 and removed once
+#'   `mstop` can be selected by blocked cross-validation.
 #' @param boundary.knots A numeric vector of length 2 specifying the global
 #'   domain for the B-spline basis (e.g., `c(1, T_max)`). If `NULL` (default),
 #'   the range of `time_idx` is used. For real-time stability, fix this to the
@@ -142,7 +155,7 @@
 #'     \item{`$cycle`}{Numeric cycle vector.}
 #'     \item{`$data`}{Original input as numeric.}
 #'     \item{`$meta`}{Named list: `method`, `knots`, `d`, `mstop`, `nu`,
-#'       `df`, `select_mstop`, `compute_time`.}
+#'       `df`, `select_mstop`, `freq` (`NA` when unknown), `compute_time`.}
 #'     \item{`$trend_lower`, `$trend_upper`}{95% normal-approximation bootstrap
 #'       band (`trend +/- 1.96 * sd`). Present only when `boot_iter > 0`.}
 #'   }
@@ -168,7 +181,7 @@
 mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
                        knots = NULL, mstop = 500L, nu = 0.1, df = 4L,
                        select_mstop = FALSE, boundary.knots = NULL,
-                       hp_lambda = NULL) {
+                       hp_lambda = NULL, freq = NULL) {
 
   # 1. Ingest ----------------------------------------------------------------
   inputs <- ensure_computable(x)
@@ -184,13 +197,20 @@ mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
   # MAD of the HP cycle anchors the threshold to the output-gap scale,
   # avoiding the scale-mismatch failure of the legacy mad(diff(y)) heuristic.
   # hp_lambda guards calibration for frequency-less numeric input (see @param).
+  # A vector without a frequency keeps the 0.2.1 behaviour (frequency 1, no
+  # warning) until 0.3.0, which aligns it with the other filters.
+  freq_detected <- .detect_frequency(inputs, freq)
+  freq_mbh      <- .frequency_or_default(freq_detected, 1)
   if (identical(d, "auto")) {
-    d_val <- stats::mad(.hp_fast(x, lambda = hp_lambda))
+    if (is.null(hp_lambda)) hp_lambda <- 6.25 * freq_mbh^4
+    d_val <- stats::mad(.hp_fast(y, lambda = hp_lambda))
     if (d_val < 1e-6) d_val <- 0.01
-    message(sprintf(
-      "Info: Huber threshold automatically calibrated to d = %.6f via HP cyclical MAD.",
-      d_val
-    ))
+    if (isTRUE(getOption("MacroFilters.verbose", FALSE))) {
+      message(sprintf(
+        "Info: Huber threshold automatically calibrated to d = %.6f via HP cyclical MAD.",
+        d_val
+      ))
+    }
   } else {
     d_val <- as.double(d)
     if (d_val < 1e-6) d_val <- 0.01
@@ -254,7 +274,7 @@ mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
   # 9. Optional block bootstrap -----------------------------------------------
   ci_bands <- NULL
   if (boot_iter > 0L) {
-    bs <- .resolve_block_size(x, block_size, n)
+    bs <- .resolve_block_size(freq_mbh, block_size, n)
     # Bootstrap refits MUST use the same estimator (identical mstop) as the
     # base fit, or the band width is biased. boot_iter is the speed dial.
     mstop_boot <- mstop_final
@@ -271,36 +291,25 @@ mbh_filter <- function(x, d = "auto", boot_iter = 0, block_size = "auto",
   }
 
   # 10. Build S3 result -------------------------------------------------------
-  result <- list(
-    trend = trend_num,
-    cycle = cycle_num,
-    data  = y,
-    meta  = list(
-      method         = "MBH",
-      knots          = knots,
-      d              = d_val,
-      mstop          = mstop_final,
-      mstop_initial  = mstop,
-      nu             = nu,
-      df             = df,
-      select_mstop   = select_mstop,
-      boundary.knots = boundary.knots,
-      compute_time   = elapsed,
-      # Temporal identity: stored once so trend, cycle AND bands can all be
-      # mapped back to real dates downstream (e.g. autoplot x-axis).
-      ts_class       = inputs$class,
-      tsp            = inputs$tsp,
-      idx            = inputs$idx
-    )
+  meta <- list(
+    method         = "MBH",
+    knots          = knots,
+    d              = d_val,
+    mstop          = mstop_final,
+    mstop_initial  = mstop,
+    nu             = nu,
+    df             = df,
+    select_mstop   = select_mstop,
+    boundary.knots = boundary.knots,
+    freq           = if (is.null(freq_detected)) NA_real_ else freq_detected,
+    compute_time   = elapsed,
+    na_lead        = 0L,
+    # Temporal identity: stored once so trend, cycle AND bands can all be
+    # mapped back to real dates downstream (e.g. autoplot x-axis).
+    ts_class       = inputs$class,
+    tsp            = inputs$tsp,
+    idx            = inputs$idx
   )
-  if (!is.null(ci_bands)) {
-    result$trend_lower <- ci_bands$lower
-    result$trend_upper <- ci_bands$upper
-  }
-  class(result) <- c("macrofilter", "list")
 
-  # 11. Validate --------------------------------------------------------------
-  validate_macrofilter(result)
-
-  result
+  new_macrofilter(trend = trend_num, data = y, meta = meta, bands = ci_bands)
 }

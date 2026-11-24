@@ -1,29 +1,14 @@
 # ── Tests: hamilton_filter() ───────────────────────────────────────────────────
 
-# ── 1. Identity: trend + cycle == data (non-NA positions) ─────────────────────
+# ── 1. Analytical properties ─────────────────────────────────────────────────
 
-test_that("Hamilton trend + cycle reconstructs original data", {
-  set.seed(1)
-  y <- cumsum(rnorm(100))
-  result <- hamilton_filter(y, h = 8, p = 4)
-  valid <- !is.na(result$trend)
-  expect_equal(
-    result$trend[valid] + result$cycle[valid],
-    result$data[valid],
-    tolerance = 1e-9
-  )
-})
-
-test_that("Identity holds for ts input with auto-h", {
-  set.seed(2)
-  y_ts <- ts(cumsum(rnorm(80)), start = c(2000, 1), frequency = 4)
-  result <- hamilton_filter(y_ts)
-  valid <- !is.na(result$trend)
-  expect_equal(
-    result$trend[valid] + result$cycle[valid],
-    result$data[valid],
-    tolerance = 1e-9
-  )
+test_that("Hamilton: a series obeying an exact linear recurrence has zero cycle", {
+  # A line plus a sinusoid satisfies a linear recurrence of order 4, so the
+  # h = 8, p = 4 regression reproduces it exactly.
+  t <- 1:200
+  y <- 2 + 0.5 * t + sin(2 * pi * t / 20)
+  r <- hamilton_filter(y, h = 8, p = 4)
+  expect_lt(max(abs(r$cycle), na.rm = TRUE), 1e-8)
 })
 
 # ── 2. Invariance: same result regardless of input class ─────────────────────

@@ -1,6 +1,7 @@
 # ── Data Ingestion: Adapter Pattern ───────────────────────────────────────────
 # ensure_computable() normalizes any time-series input to a clean numeric vector
-# plus metadata. restore_class() reverses the operation.
+# plus metadata. Results stay numeric; the metadata (tsp / idx) is kept in
+# `meta` so plots and future as.ts()/as.xts() methods can map them back.
 
 # ── Normalizer ───────────────────────────────────────────────────────────────
 
@@ -9,6 +10,13 @@
 #' Detects the class of `x`, extracts values and temporal metadata, and
 #' validates that the series contains no `NA` or `Inf` values.
 #'
+#' Dispatch uses `inherits()`, so subclasses work: `zooreg` (what
+#' `zoo::as.zoo()` returns for a `ts`) is handled as `zoo`, and `xts` is
+#' tested first because it inherits from `zoo`. Filters are univariate: any
+#' input with more than one column (`mts`, a multi-column `xts`/`zoo`, a
+#' matrix) is an error instead of being flattened into one long vector. A
+#' single-column matrix is accepted as a vector.
+#'
 #' @param x A `numeric`, `ts`, `xts`, or `zoo` object.
 #' @return A list with components:
 #'   \describe{
@@ -16,28 +24,38 @@
 #'     \item{idx}{Time index vector or `NULL` (for `numeric`/`ts`).}
 #'     \item{tsp}{`tsp` attribute or `NULL` (only for `ts`).}
 #'     \item{class}{Character: the original class name.}
-#'     \item{xts_atts}{Named list of extra `xts` attributes, or `NULL`.}
 #'   }
 #' @keywords internal
 #' @noRd
 ensure_computable <- function(x) {
-  cls <- class(x)[1L]
-
-  handler <- switch(cls,
-    "numeric" = .handle_numeric(x),
-    "integer" = .handle_numeric(x),
-    "ts"      = .handle_ts(x),
-    "xts"     = .handle_xts(x),
-    "zoo"     = .handle_zoo(x),
-    # data.frame / data.table / anything else -> error
+  if (!is.null(dim(x)) && NCOL(x) > 1L) {
     stop(
       sprintf(
-        "Unsupported input class '%s'. Pass a numeric vector, ts, xts, or zoo object.\n  Hint: for data.frames use df$column.",
-        cls
+        "`x` has %d columns; filters are univariate. Pass one column (e.g. x[, 1]).",
+        NCOL(x)
       ),
       call. = FALSE
     )
-  )
+  }
+
+  handler <- if (inherits(x, "xts")) {
+    .handle_xts(x)                       # before zoo: xts inherits from zoo
+  } else if (inherits(x, "zoo")) {
+    .handle_zoo(x)                       # includes zooreg
+  } else if (inherits(x, "ts")) {
+    .handle_ts(x)
+  } else if (is.numeric(x) && is.null(attr(x, "class"))) {
+    .handle_numeric(x)                   # numeric, integer, 1-column matrix
+  } else {
+    # data.frame / data.table / character / anything else -> error
+    stop(
+      sprintf(
+        "Unsupported input class '%s'. Pass a numeric vector, ts, xts, or zoo object.\n  Hint: for data.frames use df$column.",
+        class(x)[1L]
+      ),
+      call. = FALSE
+    )
+  }
 
   .validate_values(handler$y)
   handler
@@ -50,8 +68,7 @@ ensure_computable <- function(x) {
     y        = as.double(x),
     idx      = NULL,
     tsp      = NULL,
-    class    = "numeric",
-    xts_atts = NULL
+    class    = "numeric"
   )
 }
 
@@ -59,9 +76,8 @@ ensure_computable <- function(x) {
   list(
     y        = as.double(x),
     idx      = NULL,
-    tsp      = tsp(x),
-    class    = "ts",
-    xts_atts = NULL
+    tsp      = stats::tsp(x),
+    class    = "ts"
   )
 }
 
@@ -69,15 +85,11 @@ ensure_computable <- function(x) {
   if (!requireNamespace("zoo", quietly = TRUE)) {
     stop("Package 'zoo' is required to handle xts objects.", call. = FALSE)
   }
-  # Preserve xtsAttributes (user-set metadata on the xts object)
-  xa <- if (requireNamespace("xts", quietly = TRUE)) xts::xtsAttributes(x) else NULL
-
   list(
     y        = as.double(zoo::coredata(x)),
     idx      = zoo::index(x),
     tsp      = NULL,
-    class    = "xts",
-    xts_atts = xa
+    class    = "xts"
   )
 }
 
@@ -89,8 +101,7 @@ ensure_computable <- function(x) {
     y        = as.double(zoo::coredata(x)),
     idx      = zoo::index(x),
     tsp      = NULL,
-    class    = "zoo",
-    xts_atts = NULL
+    class    = "zoo"
   )
 }
 
@@ -116,46 +127,4 @@ ensure_computable <- function(x) {
     )
   }
   invisible(NULL)
-}
-
-# ── Restorer ─────────────────────────────────────────────────────────────────
-
-#' Restore a numeric result to the original time-series class
-#'
-#' @param y Numeric vector (trend or cycle result from an algorithm).
-#' @param input_handler The list returned by `ensure_computable()`.
-#' @return An object matching the original class of the input.
-#' @importFrom stats ts tsp
-#' @keywords internal
-#' @noRd
-restore_class <- function(y, input_handler) {
-  switch(input_handler$class,
-    "numeric" = as.double(y),
-    "ts"      = .restore_ts(y, input_handler),
-    "xts"     = .restore_xts(y, input_handler),
-    "zoo"     = .restore_zoo(y, input_handler),
-    as.double(y)  # fallback
-  )
-}
-
-.restore_ts <- function(y, h) {
-  ts(y, start = h$tsp[1L], frequency = h$tsp[3L])
-}
-
-.restore_xts <- function(y, h) {
-  if (!requireNamespace("xts", quietly = TRUE)) {
-    stop("Package 'xts' is required to restore xts objects.", call. = FALSE)
-  }
-  out <- xts::xts(y, order.by = h$idx)
-  if (length(h$xts_atts) > 0L) {
-    xts::xtsAttributes(out) <- h$xts_atts
-  }
-  out
-}
-
-.restore_zoo <- function(y, h) {
-  if (!requireNamespace("zoo", quietly = TRUE)) {
-    stop("Package 'zoo' is required to restore zoo objects.", call. = FALSE)
-  }
-  zoo::zoo(y, order.by = h$idx)
 }

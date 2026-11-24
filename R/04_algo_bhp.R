@@ -23,9 +23,12 @@
 #' @param sig_level Numeric.
 #'   Significance level for the ADF test when `stopping = "adf"`
 #'   (default 0.05).
-#' @param freq Numeric frequency override (1 = annual, 4 = quarterly,
-#'   12 = monthly). Used only when `lambda` is `NULL` and the frequency cannot
-#'   be inferred from `x`.
+#' @param freq Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly,
+#'   52 = weekly), used only when it cannot be read from `x`: a plain numeric
+#'   vector, or a `zoo`/`xts` object without a regular calendar index. It sets
+#'   the default `lambda` and the `"auto"` bootstrap block size. A `ts`
+#'   attribute or a regular `Date`, `POSIXct`, `yearqtr` or `yearmon` index
+#'   takes precedence; a `freq` that contradicts it is ignored with a warning.
 #' @inheritParams mbh_filter
 #'
 #' @details
@@ -36,9 +39,12 @@
 #'
 #' \describe{
 #'   \item{`"bic"`}{Schwarz information criterion computed as
-#'     \eqn{n \log(\hat\sigma^2) + \log(n)\,\mathrm{tr}(S^m)},
-#'     where \eqn{S^m} is the iterated smoother.  Iteration stops when the BIC
-#'     increases relative to the previous best.}
+#'     \eqn{n \log(\hat\sigma^2) + \log(n)\,\mathrm{tr}(B_m)},
+#'     where \eqn{B_m = I - (I - S)^m} is the smoother after \eqn{m}
+#'     boosting passes and \eqn{S} the HP smoother, so
+#'     \eqn{\mathrm{tr}(B_m) = n - \sum_i (1 - s_i)^m} with \eqn{s_i} the
+#'     eigenvalues of \eqn{S}.  Iteration stops when the BIC increases
+#'     relative to the previous best.}
 #'   \item{`"adf"`}{Augmented Dickey-Fuller test on the residual.  Iteration
 #'     stops when the residual is stationary at level `sig_level`.}
 #'   \item{`"fixed"`}{Runs exactly `iter_max` iterations.}
@@ -46,7 +52,8 @@
 #'
 #' @return A list of class `c("macrofilter", "list")` with `trend`, `cycle`,
 #'   `data`, and `meta` (`method = "bHP"`, `lambda`, `iterations`,
-#'   `stopping_rule`, `compute_time`). When `boot_iter > 0` it also carries
+#'   `stopping_rule`, `freq`, `compute_time`; `freq` is `NA` when the
+#'   frequency is unknown). When `boot_iter > 0` it also carries
 #'   `trend_lower` and `trend_upper` (95% normal-approximation bootstrap band);
 #'   each bootstrap refit runs a *fixed* `iterations` passes, conditioning on
 #'   the complexity selected by the base fit.
@@ -84,40 +91,24 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   iter_max <- as.integer(iter_max)
 
   # 4. Auto-lambda (Ravn-Uhlig heuristic) ------------------------------------
+  freq_detected <- .detect_frequency(inputs, freq)
   if (is.null(lambda)) {
-    if (!is.null(inputs$tsp)) {
-      freq_detected <- inputs$tsp[3L]
-    } else if (!is.null(freq)) {
-      freq_detected <- freq
-    } else {
-      freq_detected <- 4
-      warning(
+    freq_lambda <- .frequency_or_default(
+      freq_detected, default = 4,
+      warning_msg = paste0(
         "Cannot determine series frequency; assuming quarterly (freq = 4). ",
-        "Pass `lambda` or `freq` explicitly to silence this warning.",
-        call. = FALSE
+        "Pass `lambda` or `freq` explicitly to silence this warning."
       )
-    }
-    lambda <- 6.25 * freq_detected^4
+    )
+    lambda <- 6.25 * freq_lambda^4
   }
 
-  # 5. Build sparse HP system once -------------------------------------------
-  D <- Matrix::bandSparse(
-    n    = n - 2L,
-    m    = n,
-    k    = c(0L, 1L, 2L),
-    diagonals = list(
-      rep(1,  n - 2L),
-      rep(-2, n - 2L),
-      rep(1,  n - 2L)
-    )
-  )
-  Q <- Matrix::Diagonal(n) + lambda * Matrix::crossprod(D)
-
-  # Factorize once: reused by every base iteration AND every bootstrap
-  # replicate. Q itself is retained only for the BIC eigendecomposition below.
-  CH <- Matrix::Cholesky(Matrix::forceSymmetric(Q))
+  # 5. Factorize the HP system once -----------------------------------------
+  # Reused by every base iteration AND every bootstrap replicate.
+  CH <- .build_hp_cholesky(n, lambda)
 
   # 6. BIC precomputation (eigenvalues of Q) ---------------------------------
+  # Q itself is needed only here, until the trace is computed from CH (1.9).
   if (stopping == "bic") {
     if (n > 5000L) {
       warning(
@@ -126,7 +117,9 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
         call. = FALSE
       )
     }
+    Q   <- .hp_system_matrix(n, lambda)
     eig <- eigen(as.matrix(Q), symmetric = TRUE, only.values = TRUE)$values
+    rm(Q)
     # ratios[i] = (eig[i] - 1) / eig[i]  -- these are (1 - s_i)
     ratios <- (eig - 1) / eig
   }
@@ -136,9 +129,10 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
 
   # 8. Boosting loop ---------------------------------------------------------
   # Iteration 1
-  res <- .hp_solve(y, CH)
-  f_hat <- res$trend
-  u     <- res$cycle
+  # Each pass re-smooths the running residual u; the accumulated trend is
+  # always y - u.
+  u     <- .hp_fast(y, CH = CH)
+  f_hat <- y - u
 
   final_iter  <- 1L
   final_trend <- f_hat
@@ -154,9 +148,8 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   # Iterations 2..iter_max
   if (iter_max > 1L) {
     for (k in 2L:iter_max) {
-      res_k <- .hp_solve(u, CH)
-      f_hat <- f_hat + res_k$trend
-      u     <- res_k$cycle
+      u     <- .hp_fast(u, CH = CH)
+      f_hat <- y - u
 
       if (stopping == "fixed") {
         final_iter  <- k
@@ -207,7 +200,8 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   # 9. Optional block bootstrap ----------------------------------------------
   ci_bands <- NULL
   if (boot_iter > 0L) {
-    bs <- .resolve_block_size(x, block_size, n)
+    bs <- .resolve_block_size(.frequency_or_default(freq_detected, 1),
+                              block_size, n)
     # Reuse the factor CH built for the base fit (no rebuild).
     ff <- function(y_b) y_b - .bhp_fast(y_b, CH = CH, iter = final_iter)
     ci_bands <- .boot_engine(
@@ -220,42 +214,18 @@ bhp_filter <- function(x, lambda = NULL, iter_max = 100L,
   }
 
   # 10. Build S3 result -------------------------------------------------------
-  result <- list(
-    trend = final_trend,
-    cycle = final_cycle,
-    data  = y,
-    meta  = list(
-      method        = "bHP",
-      lambda        = lambda,
-      iterations    = final_iter,
-      stopping_rule = stopping,
-      compute_time  = elapsed,
-      ts_class      = inputs$class,
-      tsp           = inputs$tsp,
-      idx           = inputs$idx
-    )
+  meta <- list(
+    method        = "bHP",
+    lambda        = lambda,
+    iterations    = final_iter,
+    stopping_rule = stopping,
+    freq          = if (is.null(freq_detected)) NA_real_ else freq_detected,
+    compute_time  = elapsed,
+    na_lead       = 0L,
+    ts_class      = inputs$class,
+    tsp           = inputs$tsp,
+    idx           = inputs$idx
   )
-  if (!is.null(ci_bands)) {
-    result$trend_lower <- ci_bands$lower
-    result$trend_upper <- ci_bands$upper
-  }
-  class(result) <- c("macrofilter", "list")
 
-  validate_macrofilter(result)
-  result
-}
-
-# ── Internal helper ─────────────────────────────────────────────────────────
-#' Apply one HP smoothing pass given a precomputed system factor
-#'
-#' @param y Numeric vector to smooth.
-#' @param Q Precomputed HP system: either the sparse matrix `I + lambda * D'D`
-#'   or its Cholesky factor from [Matrix::Cholesky()]; both dispatch through
-#'   [Matrix::solve()].
-#' @return A list with `trend` and `cycle` numeric vectors.
-#' @noRd
-#' @keywords internal
-.hp_solve <- function(y, Q) {
-  trend <- as.numeric(Matrix::solve(Q, y))
-  list(trend = trend, cycle = y - trend)
+  new_macrofilter(trend = final_trend, data = y, meta = meta, bands = ci_bands)
 }

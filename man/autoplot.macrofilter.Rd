@@ -20,6 +20,11 @@ the estimated trend (emphasised). When the object carries bootstrap bands
 (\verb{$trend_lower} / \verb{$trend_upper}), a 95\% confidence ribbon is drawn behind
 the lines automatically.
 }
+\details{
+The x axis uses the time stamps of the original input: decimal time for a
+\code{ts}, \code{yearqtr} or \code{yearmon} index, dates for a \code{Date} or \code{POSIXct} index
+(\code{xts}/\code{zoo}), and the positions \verb{1..n} for a plain numeric vector.
+}
 \examples{
 \donttest{
 y <- ts(cumsum(rnorm(120)), start = c(2000, 1), frequency = 4)

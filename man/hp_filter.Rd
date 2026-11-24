@@ -13,9 +13,12 @@ hp_filter(x, lambda = NULL, freq = NULL, boot_iter = 0, block_size = "auto")
 If \code{NULL} (default), it is auto-detected using the Ravn-Uhlig rule
 (\code{6.25 * freq^4}).}
 
-\item{freq}{Numeric frequency override (1 = annual, 4 = quarterly,
-12 = monthly). Used only when \code{lambda} is \code{NULL} and the frequency cannot
-be inferred from \code{x}.}
+\item{freq}{Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly,
+52 = weekly), used only when it cannot be read from \code{x}: a plain numeric
+vector, or a \code{zoo}/\code{xts} object without a regular calendar index. It sets
+the default \code{lambda} and the \code{"auto"} bootstrap block size. A \code{ts}
+attribute or a regular \code{Date}, \code{POSIXct}, \code{yearqtr} or \code{yearmon} index
+takes precedence; a \code{freq} that contradicts it is ignored with a warning.}
 
 \item{boot_iter}{Non-negative integer.
 Number of block-bootstrap iterations for uncertainty quantification
@@ -29,13 +32,16 @@ See also \code{block_size}.}
 
 \item{block_size}{Positive integer or \code{"auto"}.
 Block length for the moving-block bootstrap (used only when
-\code{boot_iter > 0}). If \code{"auto"} (default), it is set to
-\code{2 * stats::frequency(x)} (two full cycles), bounded above by
-\code{floor(length(x) / 3)} to keep at least three blocks.}
+\code{boot_iter > 0}). If \code{"auto"} (default), it is set to \code{2 * freq} (two
+full cycles), bounded above by \code{floor(length(x) / 3)} to keep at least
+three blocks. \code{freq} is read from \code{x} (a \code{ts} attribute or a regular
+\code{Date}, \code{POSIXct}, \code{yearqtr} or \code{yearmon} index), else taken from the
+\code{freq} argument; when neither is available it is \code{1}.}
 }
 \value{
 A list of class \code{c("macrofilter", "list")} with \code{trend}, \code{cycle},
-\code{data}, and \code{meta}. When \code{boot_iter > 0} it also carries \code{trend_lower}
+\code{data}, and \code{meta}. \code{meta$freq} is the frequency read from \code{x} or \code{freq}
+(\code{NA} when unknown). When \code{boot_iter > 0} it also carries \code{trend_lower}
 and \code{trend_upper} (95\% normal-approximation bootstrap band).
 }
 \description{
@@ -52,8 +58,9 @@ which admits the closed-form solution
 where \eqn{D} is the second-difference operator.
 
 The implementation builds \eqn{D} as a banded sparse matrix
-(\code{\link[Matrix:bandSparse]{Matrix::bandSparse()}}) and solves the symmetric positive-definite system
-with a sparse Cholesky decomposition (\code{\link[Matrix:solve]{Matrix::solve()}}).
+(\code{\link[Matrix:bandSparse]{Matrix::bandSparse()}}), factorizes the symmetric positive-definite system
+once with a sparse Cholesky decomposition (\code{\link[Matrix:Cholesky]{Matrix::Cholesky()}}) and reuses
+that factor for the bootstrap replicates.
 
 When \code{lambda} is not supplied the Ravn-Uhlig (2002) rule is applied:
 \code{lambda = 6.25 * freq^4}, yielding 6.25 (annual), 1600 (quarterly), and

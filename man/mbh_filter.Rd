@@ -15,7 +15,8 @@ mbh_filter(
   df = 4L,
   select_mstop = FALSE,
   boundary.knots = NULL,
-  hp_lambda = NULL
+  hp_lambda = NULL,
+  freq = NULL
 )
 }
 \arguments{
@@ -23,11 +24,12 @@ mbh_filter(
 
 \item{d}{Numeric or \code{"auto"}.
 The delta parameter for Huber loss. If \code{"auto"} (default), it is
-calibrated as \code{stats::mad(.hp_fast(x))}, i.e. the MAD of the HP cyclical
-residual. This anchors the threshold to the output-gap scale rather than
+calibrated as the MAD of the HP cyclical residual (HP smoothing set by
+\code{hp_lambda}). This anchors the threshold to the output-gap scale rather than
 the growth-rate scale, avoiding the under-truncation failure mode of the
-legacy \code{mad(diff(y))} heuristic. A \code{message()} is emitted reporting the
-exact value chosen. Supply an explicit positive numeric to override.}
+legacy \code{mad(diff(y))} heuristic. The value chosen is stored in \code{meta$d};
+set \code{options(MacroFilters.verbose = TRUE)} to also report it with a
+\code{message()}. Supply an explicit positive numeric to override.}
 
 \item{boot_iter}{Non-negative integer.
 Number of block-bootstrap iterations for uncertainty quantification
@@ -41,9 +43,11 @@ See also \code{block_size}.}
 
 \item{block_size}{Positive integer or \code{"auto"}.
 Block length for the moving-block bootstrap (used only when
-\code{boot_iter > 0}). If \code{"auto"} (default), it is set to
-\code{2 * stats::frequency(x)} (two full cycles), bounded above by
-\code{floor(length(x) / 3)} to keep at least three blocks.}
+\code{boot_iter > 0}). If \code{"auto"} (default), it is set to \code{2 * freq} (two
+full cycles), bounded above by \code{floor(length(x) / 3)} to keep at least
+three blocks. \code{freq} is read from \code{x} (a \code{ts} attribute or a regular
+\code{Date}, \code{POSIXct}, \code{yearqtr} or \code{yearmon} index), else taken from the
+\code{freq} argument; when neither is available it is \code{1}.}
 
 \item{knots}{Integer.
 Number of interior knots for the P-Spline.
@@ -98,7 +102,10 @@ hyper-aggressively. In practice the algorithm stops at iteration ~5–15
 instead of the intended ~500. The resulting trend is nearly a straight
 line; all long-run variance is pushed into the cycle component, defeating
 the purpose of the filter. Treat \code{select_mstop = TRUE} as an
-experimental option and validate visually before relying on it.}
+experimental option and validate visually before relying on it.
+
+\code{select_mstop} will be deprecated in MacroFilters 0.3.0 and removed once
+\code{mstop} can be selected by blocked cross-validation.}
 
 \item{boundary.knots}{A numeric vector of length 2 specifying the global
 domain for the B-spline basis (e.g., \code{c(1, T_max)}). If \code{NULL} (default),
@@ -108,10 +115,18 @@ full-sample domain so the basis does not shift as the sample grows.}
 \item{hp_lambda}{Numeric or \code{NULL}.
 Smoothing parameter for the internal HP filter used to auto-calibrate
 \code{d} (only relevant when \code{d = "auto"}). If \code{NULL} (default), it is derived
-from \code{stats::frequency(x)} via the Ravn-Uhlig rule. \strong{Supply this when
-\code{x} is a plain numeric vector whose true frequency is not annual}, since
-\code{frequency()} returns \code{1} for unclassed vectors and would otherwise
-under-smooth the calibration cycle (e.g. monthly data: \code{hp_lambda = 129600}).}
+from the series frequency via the Ravn-Uhlig rule (\code{6.25 * freq^4}).
+\strong{Supply this, or \code{freq}, when \code{x} is a plain numeric vector whose true
+frequency is not annual}: without either, a plain vector is treated as
+annual and the calibration cycle is under-smoothed (e.g. monthly data:
+\code{freq = 12} or \code{hp_lambda = 129600}).}
+
+\item{freq}{Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly,
+52 = weekly), used only when it cannot be read from \code{x}: a plain numeric
+vector, or a \code{zoo}/\code{xts} object without a regular calendar index. It sets
+the default \code{hp_lambda} and the \code{"auto"} bootstrap block size. A \code{ts}
+attribute or a regular \code{Date}, \code{POSIXct}, \code{yearqtr} or \code{yearmon} index
+takes precedence; a \code{freq} that contradicts it is ignored with a warning.}
 }
 \value{
 A list of class \code{c("macrofilter", "list")} with:
@@ -120,7 +135,7 @@ A list of class \code{c("macrofilter", "list")} with:
 \item{\verb{$cycle}}{Numeric cycle vector.}
 \item{\verb{$data}}{Original input as numeric.}
 \item{\verb{$meta}}{Named list: \code{method}, \code{knots}, \code{d}, \code{mstop}, \code{nu},
-\code{df}, \code{select_mstop}, \code{compute_time}.}
+\code{df}, \code{select_mstop}, \code{freq} (\code{NA} when unknown), \code{compute_time}.}
 \item{\verb{$trend_lower}, \verb{$trend_upper}}{95\% normal-approximation bootstrap
 band (\verb{trend +/- 1.96 * sd}). Present only when \code{boot_iter > 0}.}
 }

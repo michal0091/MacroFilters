@@ -14,9 +14,12 @@
 #' @param lambda Smoothing parameter.
 #'   If `NULL` (default), it is auto-detected using the Ravn-Uhlig rule
 #'   (`6.25 * freq^4`).
-#' @param freq Numeric frequency override (1 = annual, 4 = quarterly,
-#'   12 = monthly). Used only when `lambda` is `NULL` and the frequency cannot
-#'   be inferred from `x`.
+#' @param freq Numeric frequency (1 = annual, 4 = quarterly, 12 = monthly,
+#'   52 = weekly), used only when it cannot be read from `x`: a plain numeric
+#'   vector, or a `zoo`/`xts` object without a regular calendar index. It sets
+#'   the default `lambda` and the `"auto"` bootstrap block size. A `ts`
+#'   attribute or a regular `Date`, `POSIXct`, `yearqtr` or `yearmon` index
+#'   takes precedence; a `freq` that contradicts it is ignored with a warning.
 #' @inheritParams mbh_filter
 #'
 #' @details
@@ -27,15 +30,17 @@
 #' where \eqn{D} is the second-difference operator.
 #'
 #' The implementation builds \eqn{D} as a banded sparse matrix
-#' ([Matrix::bandSparse()]) and solves the symmetric positive-definite system
-#' with a sparse Cholesky decomposition ([Matrix::solve()]).
+#' ([Matrix::bandSparse()]), factorizes the symmetric positive-definite system
+#' once with a sparse Cholesky decomposition ([Matrix::Cholesky()]) and reuses
+#' that factor for the bootstrap replicates.
 #'
 #' When `lambda` is not supplied the Ravn-Uhlig (2002) rule is applied:
 #' `lambda = 6.25 * freq^4`, yielding 6.25 (annual), 1600 (quarterly), and
 #' 129 600 (monthly).
 #'
 #' @return A list of class `c("macrofilter", "list")` with `trend`, `cycle`,
-#'   `data`, and `meta`. When `boot_iter > 0` it also carries `trend_lower`
+#'   `data`, and `meta`. `meta$freq` is the frequency read from `x` or `freq`
+#'   (`NA` when unknown). When `boot_iter > 0` it also carries `trend_lower`
 #'   and `trend_upper` (95% normal-approximation bootstrap band).
 #'
 #' @references
@@ -69,51 +74,33 @@ hp_filter <- function(x, lambda = NULL, freq = NULL,
   }
 
   # 3. Auto-lambda (Ravn-Uhlig heuristic) ------------------------------------
+  freq_detected <- .detect_frequency(inputs, freq)
   if (is.null(lambda)) {
-    if (!is.null(inputs$tsp)) {
-      freq_detected <- inputs$tsp[3L]
-    } else if (!is.null(freq)) {
-      freq_detected <- freq
-    } else {
-      freq_detected <- 4
-      warning(
+    freq_lambda <- .frequency_or_default(
+      freq_detected, default = 4,
+      warning_msg = paste0(
         "Cannot determine series frequency; assuming quarterly (freq = 4). ",
-        "Pass `lambda` or `freq` explicitly to silence this warning.",
-        call. = FALSE
+        "Pass `lambda` or `freq` explicitly to silence this warning."
       )
-    }
-    lambda <- 6.25 * freq_detected^4
+    )
+    lambda <- 6.25 * freq_lambda^4
   }
 
-  # 4-6. Sparse solve (timed) ------------------------------------------------
+  # 4-5. Sparse Cholesky solve (timed) --------------------------------------
   t0 <- proc.time()
 
-  # 4. Second-difference matrix D: (n-2) x n, bands at k = 0, 1, 2
-  D <- Matrix::bandSparse(
-    n    = n - 2L,
-    m    = n,
-    k    = c(0L, 1L, 2L),
-    diagonals = list(
-      rep(1,  n - 2L),
-      rep(-2, n - 2L),
-      rep(1,  n - 2L)
-    )
-  )
-
-  # 5. Pentadiagonal system matrix Q = I + lambda * D'D
-  Q <- Matrix::Diagonal(n) + lambda * Matrix::crossprod(D)
-
-  # 6. Solve for trend
-  trend_num <- as.numeric(Matrix::solve(Q, y))
-  cycle_num <- y - trend_num
+  # Factorize Q = I + lambda * D'D once; reused by every bootstrap replicate.
+  CH        <- .build_hp_cholesky(n, lambda)
+  cycle_num <- .hp_fast(y, CH = CH)
+  trend_num <- y - cycle_num
 
   elapsed <- (proc.time() - t0)[["elapsed"]]
 
-  # 7. Optional block bootstrap ----------------------------------------------
+  # 6. Optional block bootstrap ----------------------------------------------
   ci_bands <- NULL
   if (boot_iter > 0L) {
-    bs <- .resolve_block_size(x, block_size, n)
-    CH <- .build_hp_cholesky(n, lambda)        # factorize once, reuse per replicate
+    bs <- .resolve_block_size(.frequency_or_default(freq_detected, 1),
+                              block_size, n)
     ff <- function(y_b) y_b - .hp_fast(y_b, CH = CH)
     ci_bands <- .boot_engine(
       filter_func = ff,
@@ -124,26 +111,17 @@ hp_filter <- function(x, lambda = NULL, freq = NULL,
     )
   }
 
-  # 8. Build S3 result --------------------------------------------------------
-  result <- list(
-    trend = trend_num,
-    cycle = cycle_num,
-    data  = y,
-    meta  = list(
-      method       = "HP",
-      lambda       = lambda,
-      compute_time = elapsed,
-      ts_class     = inputs$class,
-      tsp          = inputs$tsp,
-      idx          = inputs$idx
-    )
+  # 7. Build S3 result --------------------------------------------------------
+  meta <- list(
+    method       = "HP",
+    lambda       = lambda,
+    freq         = if (is.null(freq_detected)) NA_real_ else freq_detected,
+    compute_time = elapsed,
+    na_lead      = 0L,
+    ts_class     = inputs$class,
+    tsp          = inputs$tsp,
+    idx          = inputs$idx
   )
-  if (!is.null(ci_bands)) {
-    result$trend_lower <- ci_bands$lower
-    result$trend_upper <- ci_bands$upper
-  }
-  class(result) <- c("macrofilter", "list")
 
-  validate_macrofilter(result)
-  result
+  new_macrofilter(trend = trend_num, data = y, meta = meta, bands = ci_bands)
 }
