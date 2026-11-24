@@ -11,8 +11,8 @@ See NEWS.md for the full list.
 
 * local: Ubuntu 24.04 (WSL2), R 4.6.2
 * win-builder:
-  - R-devel (2026-11-17 r90926 ucrt) — Status: TODO
-  - R-release (4.6.2) — Status: TODO
+  - R-devel (2026-11-17 r90926 ucrt) — Status: OK
+  - R-release (4.6.2) — Status: OK
 * R-hub v2 (GitHub Actions):
   - linux, R-devel (2026-11-21 r90959), Ubuntu 26.04.1 LTS — Status: OK
   - windows, R-devel (2026-11-17 r90926 ucrt), Windows Server 2022 — Status: OK
