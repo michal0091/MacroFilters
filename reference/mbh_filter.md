@@ -244,7 +244,7 @@ print(result)
 #>    Observations : 80
 #>    Parameters   : knots = 40, d = 1.627, mstop = 100, mstop_initial = 100, nu = 0.1, df = 4, select_mstop = FALSE, freq = 4
 #>    Cycle range  : [-2.66, 4.533]  sd = 1.518
-#>    Compute time : 0.021 s
+#>    Compute time : 0.017 s
 
 # \donttest{
 # Full example with default parameters
@@ -255,6 +255,6 @@ print(result2)
 #>    Observations : 200
 #>    Parameters   : knots = 100, d = 1.162, mstop = 500, mstop_initial = 500, nu = 0.1, df = 4, select_mstop = FALSE, freq = 4
 #>    Cycle range  : [-4.077, 3.726]  sd = 1.419
-#>    Compute time : 0.119 s
+#>    Compute time : 0.098 s
 # }
 ```
